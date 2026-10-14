@@ -69,6 +69,12 @@ export default class Preloader extends Phaser.Scene {
       g.fillStyle(0x7b7d7d, 1).fillRect(3, 0, 4, 48);
       g.fillStyle(0xf4d03f, 1).fillRect(7, 2, 17, 12);
     });
+    // Mockup provisional mariposa (GDD: suman puntos al pasar). Sin sprite
+    // externo: mockup mínimo pendiente de recurso real.
+    make(this, 'butterfly', 24, 18, (g) => {
+      g.fillStyle(0xf368e0, 1).fillEllipse(7, 9, 12, 14).fillEllipse(17, 9, 12, 14);
+      g.fillStyle(0x222222, 1).fillRect(11, 2, 2, 14);
+    });
     this.scene.start('Game');
   }
 }

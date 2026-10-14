@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import Health from '../domain/Health.js';
+import Score from '../domain/Score.js';
 import EntityFactory from '../domain/EntityFactory.js';
 import HUD from '../ui/HUD.js';
 import { LEVEL1 } from '../levels/level1.js';
@@ -8,7 +9,8 @@ import { LEVEL1 } from '../levels/level1.js';
 // Factory; aquí solo se cablean física, colisiones y cámara.
 // Supuestos documentados (GDD no los define): 3 hojas, 1 golpe = 1 hoja,
 // invencibilidad 1 s, pozo = 1 hoja + respawn, cangrejo 2 pisotones,
-// erizo inmune, avispa 1 pisotón, barro x0.5 velocidad.
+// erizo inmune, avispa 1 pisotón, barro x0.5 velocidad, mariposa +25 y
+// 100 pts = 1 hoja (tope max).
 const SPEED = 220;
 const JUMP = -520;
 const BOUNCE_AFTER_STOMP = -350;
@@ -30,7 +32,11 @@ export default class Game extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, LEVEL1.worldWidth, 600);
 
     this.health = new Health(3);
-    this.hud = new HUD(this, this.health);
+    this.score = new Score({ threshold: 100 });
+    this.score.on('extra-life', (n) => {
+      for (let i = 0; i < n; i += 1) this.health.heal(1);
+    });
+    this.hud = new HUD(this, this.health, this.score);
     this.add.text(12, 34, 'Nivel 1 (slice) — llega a la bandera', {
       fontSize: '13px', color: '#aaaaaa',
     }).setScrollFactor(0).setDepth(10);
@@ -59,6 +65,9 @@ export default class Game extends Phaser.Scene {
       EntityFactory.createStaticRect(this, this.muds, m.x + m.w / 2, m.y, 'mud', m.w, 16);
     }
     this.goal = this.physics.add.staticGroup().create(LEVEL1.goal.x, LEVEL1.goal.y, 'goal');
+    // Mariposas: al pasar sobre ellas suman puntos (GDD Mecánica).
+    this.butterflies = this.physics.add.staticGroup();
+    for (const b of LEVEL1.butterflies ?? []) this.butterflies.create(b.x, b.y, 'butterfly');
 
     // --- Jugador (sapo gigante, mockup) ---
     this.player = this.physics.add.sprite(LEVEL1.spawn.x, LEVEL1.spawn.y, 'player');
@@ -79,6 +88,11 @@ export default class Game extends Phaser.Scene {
     this.physics.add.collider(this.player, this.enemies, (p, e) => this.onPlayerEnemy(e));
     this.physics.add.overlap(this.player, this.spikes, () => this.hurtPlayer());
     this.physics.add.overlap(this.player, this.goal, () => this.win());
+    this.physics.add.overlap(this.player, this.butterflies, (p, b) => {
+      if (!b.active) return;
+      b.disableBody(true, true);
+      this.score.add(25);
+    });
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,R');

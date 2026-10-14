@@ -25,6 +25,14 @@ export const LEVEL1 = {
   spikes: [
     { x: 440, y: 532 },
   ],
+  // Mariposas (GDD: suman puntos al pasar). Supuesto: +25 c/u, 5 en Nivel 1.
+  butterflies: [
+    { x: 250, y: 390 },
+    { x: 480, y: 300 },
+    { x: 760, y: 380 },
+    { x: 950, y: 470 },
+    { x: 150, y: 500 },
+  ],
   cacti: [
     { x: 880, y: 512, w: 32, h: 64 },
   ],

@@ -24,6 +24,14 @@ export default class Health extends Phaser.Events.EventEmitter {
     return this.lives <= 0;
   }
 
+  // GDD Mecánica: 100 puntos = 1 vida extra. Supuesto: tope en maxLives.
+  heal(amount = 1) {
+    if (this.lives <= 0) return this.lives;
+    this.lives = Math.min(this.maxLives, this.lives + amount);
+    this.emit('changed', this.lives);
+    return this.lives;
+  }
+
   isDead() {
     return this.lives <= 0;
   }
