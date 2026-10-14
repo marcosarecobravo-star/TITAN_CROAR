@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import Health from '../domain/Health.js';
 import Score from '../domain/Score.js';
+import Tongue, { TONGUE, POINTS } from '../entities/Tongue.js';
 import EntityFactory from '../domain/EntityFactory.js';
 import HUD from '../ui/HUD.js';
 import { LEVEL1 } from '../levels/level1.js';
@@ -10,7 +11,8 @@ import { LEVEL1 } from '../levels/level1.js';
 // Supuestos documentados (GDD no los define): 3 hojas, 1 golpe = 1 hoja,
 // invencibilidad 1 s, pozo = 1 hoja + respawn, cangrejo 2 pisotones,
 // erizo inmune, avispa 1 pisotón, barro x0.5 velocidad, mariposa +25 y
-// 100 pts = 1 hoja (tope max).
+// 100 pts = 1 hoja (tope max). Lengua-captura (acordado): X/clic, alcance
+// 90 px, activa 150 ms, cooldown 600 ms; avispa +50, mosca +10.
 const SPEED = 220;
 const JUMP = -520;
 const BOUNCE_AFTER_STOMP = -350;
@@ -37,7 +39,7 @@ export default class Game extends Phaser.Scene {
       for (let i = 0; i < n; i += 1) this.health.heal(1);
     });
     this.hud = new HUD(this, this.health, this.score);
-    this.add.text(12, 34, 'Nivel 1 (slice) — llega a la bandera', {
+    this.add.text(12, 34, 'Nivel 1 — llega a la bandera | X/clic: lengua', {
       fontSize: '13px', color: '#aaaaaa',
     }).setScrollFactor(0).setDepth(10);
     this.health.on('changed', (lives) => {
@@ -75,8 +77,17 @@ export default class Game extends Phaser.Scene {
     this.player.setSize(30, 46);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
-    // --- Enemigos vía Factory ---
-    this.enemies = EntityFactory.createEnemies(this, LEVEL1);
+    // --- Lengua-captura (mockup: rectángulo temporal, sin sprites externos) ---
+    this.facing = 1;
+    this.tongue = new Tongue();
+    this.tongueView = this.add.rectangle(-100, -100, TONGUE.RANGE, 10, 0xff6b9d)
+      .setVisible(false)
+      .setDepth(5);
+
+    // --- Enemigos vía Factory (las moscas son inofensivas: sin colisión) ---
+    const spawned = EntityFactory.createEnemies(this, LEVEL1);
+    this.enemies = spawned.filter((e) => e.texture.key !== 'fly');
+    this.flies = spawned.filter((e) => e.texture.key === 'fly');
     for (const e of this.enemies) {
       this.physics.add.collider(e, this.solids);
       this.physics.add.collider(e, this.cacti);
@@ -95,12 +106,18 @@ export default class Game extends Phaser.Scene {
     });
 
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.keys = this.input.keyboard.addKeys('W,A,S,D,R');
+    this.keys = this.input.keyboard.addKeys('W,A,S,D,R,X');
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
+    this.input.on('pointerdown', (pointer) => {
+      if (this.won || this.over) return;
+      const wx = pointer.worldX ?? pointer.x;
+      this.fireTongue(wx >= this.player.x ? 1 : -1);
+    });
   }
 
   onPlayerEnemy(enemy) {
     if (this.won || this.over || enemy.dead) return;
+    if (enemy.texture.key === 'fly') return; // mosca inofensiva al contacto
     const falling = (this.player.body.velocity.y ?? 0) > 60;
     const playerBottom = this.player.body.bottom;
     const enemyTop = enemy.body.top;
@@ -133,6 +150,38 @@ export default class Game extends Phaser.Scene {
     this.health.damage(1);
   }
 
+  fireTongue(dir) {
+    if (this.won || this.over) return;
+    if (!this.tongue.fire(this.time.now, dir)) return;
+    const r = this.tongue.rect(this.player.x, this.player.y, this.player.displayWidth / 2);
+    this.tongueView.setPosition((r.x0 + r.x1) / 2, r.y).setVisible(true);
+  }
+
+  resolveTongueCaptures(now) {
+    if (!this.tongue.isActive(now)) {
+      this.tongueView.setVisible(false);
+      return;
+    }
+    const px = this.player.x;
+    const py = this.player.y;
+    const halfW = this.player.displayWidth / 2;
+    // GDD: la lengua atrapa avispas y moscas (no cangrejo/erizo).
+    for (const e of this.enemies) {
+      if (e.dead || e.texture.key !== 'wasp') continue;
+      if (this.tongue.hits(e, px, py, halfW)) {
+        e.capture();
+        this.score.add(POINTS.WASP);
+      }
+    }
+    for (const f of this.flies) {
+      if (f.dead) continue;
+      if (this.tongue.hits(f, px, py, halfW)) {
+        f.capture();
+        this.score.add(POINTS.FLY);
+      }
+    }
+  }
+
   win() {
     if (this.won || this.over) return;
     this.won = true;
@@ -159,11 +208,12 @@ export default class Game extends Phaser.Scene {
     const right = this.cursors.right.isDown || this.keys.D.isDown;
     const jump = this.cursors.up.isDown || this.keys.W.isDown || this.cursors.space?.isDown;
 
-    if (left && !right) p.setVelocityX(-speed);
-    else if (right && !left) p.setVelocityX(speed);
+    if (left && !right) { p.setVelocityX(-speed); this.facing = -1; }
+    else if (right && !left) { p.setVelocityX(speed); this.facing = 1; }
     else p.setVelocityX(0);
 
     if (jump && p.body.blocked.down) p.setVelocityY(JUMP);
+    if (Phaser.Input.Keyboard.JustDown(this.keys.X)) this.fireTongue(this.facing);
 
     // punto seguro para respawn tras pozo (suelo firme)
     if (p.body.blocked.down) this.lastSafe = { x: p.x, y: p.y - 4 };
@@ -177,6 +227,8 @@ export default class Game extends Phaser.Scene {
       this.invulnerableUntil = this.time.now + 1000;
     }
 
+    this.resolveTongueCaptures(time);
     for (const e of this.enemies) e.update(time, delta, p);
+    for (const f of this.flies) f.update(time, delta, p);
   }
 }

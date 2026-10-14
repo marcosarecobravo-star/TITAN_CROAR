@@ -75,6 +75,11 @@ export default class Preloader extends Phaser.Scene {
       g.fillStyle(0xf368e0, 1).fillEllipse(7, 9, 12, 14).fillEllipse(17, 9, 12, 14);
       g.fillStyle(0x222222, 1).fillRect(11, 2, 2, 14);
     });
+    // Mockup provisional mosca inofensiva (GDD Mecánica, captura con lengua).
+    make(this, 'fly', 20, 16, (g) => {
+      g.fillStyle(0xdfe6e9, 0.95).fillEllipse(6, 5, 10, 7).fillEllipse(14, 5, 10, 7);
+      g.fillStyle(0x2d3436, 1).fillEllipse(10, 10, 12, 9);
+    });
     this.scene.start('Game');
   }
 }

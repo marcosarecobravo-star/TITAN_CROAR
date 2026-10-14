@@ -31,8 +31,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   // Devuelve true si el enemigo murió con este pisotón.
-  stomp() {
-    if (this.dead) return false;
+  stomp() {    if (this.dead) return false;
     this.hp -= 1;
     if (this.hp <= 0) {
       this.dead = true;
@@ -50,5 +49,15 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       onComplete: () => this.setAlpha(1),
     });
     return false;
+  }
+
+  // Captura con lengua (GDD Mecánica: avispas y moscas). Mata sin importar
+  // el hp; no aplica a cangrejo/erizo (la Scene no la usa con ellos).
+  capture() {
+    if (this.dead) return false;
+    this.dead = true;
+    this.disableBody(true, true);
+    this.scene.events.emit('enemy-killed', this);
+    return true;
   }
 }

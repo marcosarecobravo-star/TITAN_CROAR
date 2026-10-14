@@ -25,6 +25,12 @@ export const LEVEL1 = {
   spikes: [
     { x: 440, y: 532 },
   ],
+  // Moscas inofensivas (GDD: capturables con lengua). Supuesto: layout propio.
+  flies: [
+    { x: 300, y: 400, range: 40 },
+    { x: 520, y: 300, range: 40 },
+    { x: 830, y: 380, range: 40 },
+  ],
   // Mariposas (GDD: suman puntos al pasar). Supuesto: +25 c/u, 5 en Nivel 1.
   butterflies: [
     { x: 250, y: 390 },

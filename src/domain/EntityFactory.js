@@ -1,6 +1,7 @@
 import Crab from '../entities/Crab.js';
 import Hedgehog from '../entities/Hedgehog.js';
 import Wasp from '../entities/Wasp.js';
+import Fly from '../entities/Fly.js';
 
 // Patrón Factory: crea enemigos/obstáculos desde LevelConfig sin que la
 // Scene conozca las clases concretas.
@@ -26,6 +27,14 @@ export default class EntityFactory {
         patrolMin: w.x - w.range,
         patrolMax: w.x + w.range,
         speed: w.speed,
+      }));
+    }
+    for (const f of config.flies ?? []) {
+      const range = f.range ?? 40;
+      list.push(new Fly(scene, f.x, f.y, {
+        patrolMin: f.x - range,
+        patrolMax: f.x + range,
+        speed: 0,
       }));
     }
     return list;
