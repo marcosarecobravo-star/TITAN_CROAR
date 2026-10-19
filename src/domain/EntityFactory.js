@@ -2,6 +2,7 @@ import Crab from '../entities/Crab.js';
 import Hedgehog from '../entities/Hedgehog.js';
 import Wasp from '../entities/Wasp.js';
 import Fly from '../entities/Fly.js';
+import Eagle from '../entities/Eagle.js';
 
 // Patrón Factory: crea enemigos/obstáculos desde LevelConfig sin que la
 // Scene conozca las clases concretas.
@@ -35,6 +36,17 @@ export default class EntityFactory {
         patrolMin: f.x - range,
         patrolMax: f.x + range,
         speed: 0,
+      }));
+    }
+    // Jefe águila (solo en niveles con boss; GDD Enemigos).
+    if (config.eagle) {
+      const e = config.eagle;
+      list.push(new Eagle(scene, e.x, e.y, {
+        hp: e.hp ?? 3,
+        activateX: e.activateX,
+        patrolMin: e.x - 160,
+        patrolMax: e.x + 160,
+        speed: 50,
       }));
     }
     return list;

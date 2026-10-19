@@ -23,6 +23,9 @@ export default class Preloader extends Phaser.Scene {
       bar.fillStyle(0xffffff, 1);
       bar.fillRect(width / 2 - 160, height / 2 - 10, 320 * p, 20);
     });
+    // Fondo del Nivel 1: PNG existente (decisión del usuario). Copiado a
+    // public/ para que Vite lo sirva también en build (assets/ no se copia).
+    this.load.image('bgPantano', 'Pantano%20Titan%20Croar.png');
   }
 
   create() {
@@ -80,6 +83,41 @@ export default class Preloader extends Phaser.Scene {
       g.fillStyle(0xdfe6e9, 0.95).fillEllipse(6, 5, 10, 7).fillEllipse(14, 5, 10, 7);
       g.fillStyle(0x2d3436, 1).fillEllipse(10, 10, 12, 9);
     });
+    // Mockup provisional tronco (GDD Obstáculos: "Se interpone en el camino";
+    // sólido y saltable, sin daño — decisión del usuario).
+    make(this, 'log', 72, 24, (g) => {
+      g.fillStyle(0x6d4c41, 1).fillRoundedRect(0, 2, 72, 20, 10);
+      g.fillStyle(0x8d6e63, 1).fillCircle(8, 12, 7).fillCircle(64, 12, 7);
+      g.fillStyle(0x5d4037, 1).fillCircle(8, 12, 3).fillCircle(64, 12, 3);
+    });
+    // Mockup provisional ancla de la lengua-cuerda (GDD Mecánica: balancearse
+    // con la lengua como cuerda; enganche a anclas fijas — decisión usuario).
+    make(this, 'anchor', 16, 16, (g) => {
+      g.fillStyle(0xffe66d, 1).fillCircle(8, 8, 7);
+      g.fillStyle(0x2d3436, 1).fillCircle(8, 8, 3);
+    });
+    // Mockup provisional arena movediza (GDD Obstáculos: "Barro o Arena
+    // movediza: Reduce la velocidad temporalmente"; Nivel 2 Desierto).
+    make(this, 'sand', 64, 16, (g) => {
+      g.fillStyle(0xe0c083, 0.9).fillRect(0, 0, 64, 16);
+      g.fillStyle(0xc9a86a, 1).fillCircle(12, 8, 3).fillCircle(34, 9, 4).fillCircle(52, 6, 3);
+    });
+    // Mockup provisional águila jefe (GDD Enemigos: jefe del último nivel;
+    // carga, plumas y ataques aéreos; varios golpes para derrotarla).
+    make(this, 'eagle', 56, 40, (g) => {
+      g.fillStyle(0x5d4037, 1).fillEllipse(28, 22, 34, 22);
+      g.fillStyle(0x795548, 1).fillTriangle(2, 14, 24, 20, 20, 6).fillTriangle(54, 14, 32, 20, 36, 6);
+      g.fillStyle(0xf5f0e1, 1).fillCircle(44, 12, 7);
+      g.fillStyle(0xf39c12, 1).fillTriangle(50, 12, 56, 14, 50, 16);
+      g.fillStyle(0x000000, 1).fillCircle(45, 11, 2);
+    });
+    // Mockup provisional pluma afilada (GDD Enemigos: águila "lanzar plumas
+    // afiladas").
+    make(this, 'feather', 8, 18, (g) => {
+      g.fillStyle(0xf5f0e1, 1).fillEllipse(4, 9, 7, 16);
+      g.fillStyle(0xb0a890, 1).fillRect(3, 2, 2, 14);
+    });
+    // Fondo del Nivel 1 (bgPantano): se carga en preload() desde public/.
     this.scene.start('Game');
   }
 }

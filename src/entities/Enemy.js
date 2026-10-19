@@ -15,6 +15,13 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.dir = 1;
     this.dead = false;
     this.setCollideWorldBounds(false);
+
+    // Anti-pozo (GDD Enemigos: el cangrejo "no caerán a un agujero donde
+    // podrían morir"; decisión usuario: también el erizo). El umbral de suelo
+    // se deriva del nivel (top del primer tramo de suelo) en vez de un
+    // número mágico del layout.
+    this.avoidPits = opts.avoidPits ?? false;
+    this.groundY = opts.groundY ?? (scene.level?.grounds?.[0]?.y ?? 560);
   }
 
   update(...args) {
@@ -24,10 +31,26 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   // eslint-disable-next-line no-unused-vars
   updateBehaviour(time, delta, player) {
+    // Anti-pozo: a ras de suelo, si justo por delante no hay sólido, gira.
+    if (
+      this.avoidPits && this.body?.blocked.down
+      && this.y > this.groundY - 90 && this.pitAhead()
+    ) {
+      this.dir *= -1;
+    }
     // patrulla horizontal por defecto
     this.setVelocityX(this.patrolSpeed * this.dir);
     if (this.x <= this.patrolMin) this.dir = 1;
     if (this.x >= this.patrolMax) this.dir = -1;
+  }
+
+  // ¿Hay un hueco (pozo) justo delante del enemigo? Comprueba si algún
+  // sólido del nivel cubre la columna situada a 'probe' px en su dirección.
+  pitAhead(probe = 26) {
+    const solids = this.scene.solids?.getChildren?.() ?? [];
+    if (solids.length === 0) return false;
+    const aheadX = this.x + this.dir * probe;
+    return !solids.some((s) => Math.abs(s.x - aheadX) < s.displayWidth / 2);
   }
 
   // Devuelve true si el enemigo murió con este pisotón.

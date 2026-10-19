@@ -1,8 +1,10 @@
-// Config del Nivel 1 (slice). Supuesto: layout propio porque el GDD no define niveles.
-// Reglas GDD cubiertas: plataformas, cangrejo x2 golpes, erizo inmune,
-// avispa en aire, espinas, cactus-pared, pozo, barro, meta de nivel.
+// Config del Nivel 1 — PANTANO (GDD sección "NIVEL 1: PANTANO":
+// barro, pozos, espinas y tronco; cangrejo, avispa y erizo).
+// Supuesto: layout propio porque el GDD no define posiciones.
 export const LEVEL1 = {
+  name: 'Pantano',
   spawn: { x: 60, y: 450 },
+  bgImage: 'bgPantano', // PNG real en public/ (decisión del usuario).
   // Segmentos de suelo (el hueco entre ellos es el pozo).
   grounds: [
     { x: 0, y: 560, w: 500 },
@@ -39,11 +41,23 @@ export const LEVEL1 = {
     { x: 950, y: 470 },
     { x: 150, y: 500 },
   ],
-  cacti: [
-    { x: 880, y: 512, w: 32, h: 64 },
-  ],
+  // Sin cactus: sección "NIVEL 1: PANTANO" solo lista barro, pozos, espinas
+  // y tronco (decisión usuario: se retira el cactus que había aquí).
+  // Barro (GDD: reduce la velocidad temporalmente).
   muds: [
     { x: 660, y: 538, w: 110 },
+  ],
+  // Tronco (GDD Obstáculos: "Se interpone en el camino"; decisión usuario:
+  // sólido y saltable, sin daño al contacto). x = esquina izquierda.
+  logs: [
+    { x: 100, y: 532, w: 72 },
+    { x: 940, y: 532, w: 72 },
+  ],
+  // Anclas de la lengua-cuerda (GDD Mecánica: balancearse como una cuerda;
+  // decisión usuario: enganche a anclas fijas con balanceo).
+  anchors: [
+    { x: 560, y: 300 }, // sobre el pozo: balancear para cruzar
+    { x: 900, y: 250 }, // sobre tronco/erizo: pasar por encima
   ],
   goal: { x: 1020, y: 520 },
   worldWidth: 1120,
