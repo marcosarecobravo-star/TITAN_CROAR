@@ -181,9 +181,9 @@ export default class Game extends Phaser.Scene {
     });
   }
 
-  // R: contexto — derrota = reiniciar el nivel actual con 3 hojas y 0 pts;
-  // victoria = avanzar de nivel (o reiniciar el juego si era el último);
-  // en juego = reintentar el nivel.
+  // R: contexto — derrota = reiniciar con 3 hojas y 0 pts; victoria =
+  // reiniciar el juego (con un solo nivel isLastLevel siempre es true);
+  // en juego = reintentar.
   restartByContext() {
     if (this.over) progression.resetLevel();
     else if (this.won) {
@@ -271,6 +271,11 @@ export default class Game extends Phaser.Scene {
 
   win() {
     if (this.won || this.over) return;
+    // Un solo nivel registrado: la bandera finaliza el juego (decisión usuario).
+    if (this.isLastLevel) {
+      this.winFinal();
+      return;
+    }
     this.won = true;
     this.player.setVelocity(0, 0);
     this.player.body.setAllowGravity(false);
@@ -283,7 +288,7 @@ export default class Game extends Phaser.Scene {
     });
   }
 
-  // Victoria final del juego (GDD: derrotar al jefe del último nivel).
+  // Victoria final del juego (único nivel: bandera o jefe derrotado).
   winFinal() {
     if (this.won || this.over) return;
     this.won = true;
@@ -303,8 +308,9 @@ export default class Game extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Plumas fuera de pantalla: limpieza.
-    this.feathers.children.each((f) => {
+    // Plumas fuera de pantalla: limpieza. Phaser 4: Group.children es un Set
+    // nativo (forEach), no el Structs.Set de Phaser 3 (que tenía each).
+    this.feathers.children.forEach((f) => {
       if (f.active && (f.y > 640 || f.x < -40 || f.x > this.level.worldWidth + 40)) f.destroy();
     });
     if (this.won || this.over) return;
