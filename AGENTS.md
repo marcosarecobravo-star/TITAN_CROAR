@@ -5,15 +5,16 @@
 - Aplicar estas instrucciones al inicio de cada consulta y antes de modificar el proyecto.
 - Responder en español. Adaptar la profundidad al pedido: breve en consultas simples, completa en cambios de comportamiento.
 - Rutas vigentes (verificarlas en cada tarea; no asumir que siguen iguales):
-  - Documento principal de requisitos: `Docs/GDD_TC.docx` (único documento; `Docs/` para documentación adicional). Renombrado y actualizado por el usuario el 19/10/2026 (antes `Docs/GDD_DT2.docx`) y sin commitear: preservarlo, no descartarlo ni sobrescribirlo.
-  - Código: `src/main.js`, `src/scenes/` (`Boot.js`, `Preloader.js`, `Game.js`), `src/entities/`, `src/domain/`, `src/levels/` (`index.js` registro, `level1.js`, `level2.js`, `level3.js`), `src/ui/HUD.js`.
-  - Progresión multinivel: `src/domain/Progression.js` (singleton por módulo, exporta `progression`); `Game.js` carga el nivel por índice desde `LEVELS`.
+  - Documento principal de requisitos: `Docs/GDD_TC.docx` (único documento; `Docs/` para documentación adicional). Renombrado desde `Docs/GDD_DT2.docx` y commiteado en `3b5a253`; hay una edición posterior sin commitear (regla de exclusión mutua de la lengua): preservarla, no descartarla ni sobrescribirla.
+  - Código: `src/main.js`, `src/scenes/` (`Boot.js`, `Preloader.js`, `Game.js`), `src/entities/`, `src/domain/`, `src/levels/` (`index.js`, `level1.js`, `level2.js`, `level3.js`), `src/ui/HUD.js`.
+  - Niveles registrados: `src/levels/index.js` exporta **`LEVELS = [LEVEL1]`** — un único nivel (Pantano), decisión del usuario del 19/10/2026. `level2.js`, `level3.js` y `src/entities/Eagle.js` existen pero **no están registrados/uso**: no asumir multinivel ni jefe activo.
+  - Estado de progresión: `src/domain/Progression.js` (singleton por módulo, exporta `progression`); con un solo nivel, derrota = `resetLevel()` (hojas 3 y puntaje 0) y la bandera final completa el juego.
   - Legacy, no usar sin decisión explícita: `src/config/LevelConfig.js`, `src/entities/Health.js`, `src/entities/EnemyFactory.js`.
-  - Recursos gráficos: `public/` (fondo real `Pantano Titan Croar.png`, servido por Vite) y `assets/` con 4 PNG sin trackear (`RANA TITAN CROAR1.png`, `PUERCO ESPÍN.png`, `Pantano Titan Croar.png`, `Cangrejo acorazado.png`); mockups generados en `src/scenes/Preloader.js`.
+  - Recursos gráficos: `public/` trackeado (fondo `Pantano Titan Croar.png`) más `rana.png`, `cangrejo.png`, `erizo.png` **sin trackear** (sprites reales con mockup de respaldo en `Preloader.make`); `assets/` con 4 PNG originales ya trackeados; mockups generados en `src/scenes/Preloader.js` y `src/scenes/Boot.js`.
   - Configuración: `package.json` (scripts `dev`, `build`, `preview`; sin tests ni lint), `vite.config.js`, `index.html`.
 - Si las rutas reales difieren de las anteriores, usar las reales y señalar la diferencia.
 - Revisar la información vigente en cada consulta; no depender solo de resúmenes de conversaciones anteriores.
-- Preservar el trabajo existente del usuario. Estado conocido (19/10/2026): rama `feature/brechas-gdd` sin upstream; cambios sin commitear del usuario: `D Docs/GDD_DT2.docx`, `?? Docs/GDD_TC.docx`, trabajo multinivel y de entidades en `src/` (clases nuevas `Progression.js`, `Eagle.js`, `TongueRope.js`, `levels/index|2|3`), `?? public/` y `?? assets/`. La lista exacta cambia con cada tarea: verificar con `git status`. No descartar ni commitear sin consultar.
+- Preservar el trabajo existente del usuario. Estado conocido (19/10/2026, rama `fix/reconciliar-reglas-gdd` con upstream): sin commitear hay `M Docs/GDD_TC.docx`, `M src/main.js` (**`physics.debug = true` — decisión del usuario: se deja**), `M Boot/Preloader/Game/Crab/Enemy/Hedgehog` y `?? public/rana.png`, `cangrejo.png`, `erizo.png`. La lista exacta cambia con cada tarea: verificar con `git status`. No descartar ni commitear sin consultar.
 
 ## 2. Revisar la documentación y el requisito
 
@@ -21,7 +22,7 @@ Antes de proponer o implementar:
 
 1. Identificar el requisito y su comportamiento esperado.
 2. Revisar `Docs/`, como mínimo `Docs/GDD_TC.docx`.
-3. Consultar las secciones pertinentes del GDD: Descripción General, Historia, Mecánica principal (movimiento, salto, lengua-cuerda, captura con lengua, puntos/vida extra con puntaje que vuelve a 0, mariposas/moscas), Enemigos (erizo inmune, cangrejo x2, avispa, águila jefe), Obstáculos (espinas, cactus, pozos, barro o arena movediza, tronco), Condición de Derrota, Condición de Victoria, y el listado final de niveles.
+3. Consultar las secciones pertinentes del GDD: Descripción General, Historia, Mecánica principal (movimiento, salto, lengua-cuerda para balancearse, llegar de un punto a otro, pasar sobre enemigos **y subir de arriba a abajo**, con **exclusión mutua**: mientras se usa la lengua para balancearse o subir no puede atacar a los insectos; captura con lengua, puntos/vida extra con puntaje que vuelve a 0, mariposas/moscas), Enemigos (erizo inmune, cangrejo x2, avispa, águila jefe), Obstáculos (espinas, cactus, pozos, barro o arena movediza, tronco), Condición de Derrota, Condición de Victoria, y el listado final de niveles.
 4. Clasificar el requisito como:
    - **Definido:** el GDD describe suficientemente el comportamiento.
    - **Parcialmente definido:** contemplado pero faltan detalles necesarios.
@@ -56,29 +57,30 @@ Interacciones propias de este plataformas, verificar cuando apliquen:
 - Movimiento lateral, salto, gravedad, colisiones con plataformas/piso y límites del mundo (`physics.world.setBounds`, sin colisión inferior para que el pozo deje caer al jugador).
 - Pisotón vs. contacto lateral: erizo inmune (el pisotón daña al jugador), cangrejo que aguanta 2 pisotones y no cae a pozos, avispa por pisotón o lengua, águila jefe que recibe varios golpes (`Eagle.stomp()` emite `boss-defeated`).
 - Enemigos aéreos y su temporización (avispa que sigue al jugador hasta matarla o salir de rango).
-- Lengua: captura con **X/clic** (`src/entities/Tongue.js`) y lengua-cuerda de desplazamiento con **C** a anclas fijas (`src/entities/TongueRope.js`, péndulo).
+- Lengua: captura con **X/clic** (`src/entities/Tongue.js`) y lengua-cuerda con **C** a anclas fijas (`src/entities/TongueRope.js`, péndulo de longitud fija). Reglas nuevas del GDD sin cumplir del todo: **exclusión mutua** (no atacar mientras se balancea o sube) e **izar/bajar** ("subir de arriba a abajo") — ver brechas.
 - Puntos y vida extra (100 puntos = 1 hoja), mariposas/moscas, HUD de hojas.
 - Obstáculos: espinas, cactus-pared, pozo con respawn, barro/arena movediza que ralentiza temporalmente, tronco que se interpone.
 - Escenas y transiciones, spawn/checkpoints, condición de victoria por punto final de cada nivel y derrota con reinicio desde 0.
-- Estructura de 3 niveles con tema y composición propios (Pantano, Desierto, Bosque; ver brechas más abajo).
+- Niveles: el GDD define 3 (Pantano, Desierto, Bosque) y el registro actual solo incluye Pantano (ver brechas); verificar `src/levels/index.js` antes de asumir cualquiera de los dos.
 - Input de teclado (cursor, WASD, X, R) y táctil (pointer) si se extiende.
 
-Brechas GDD vs. código (revisado 19/10/2026). **Cerradas en esta revisión**, verificar que sigan así antes de cada tarea:
+Brechas GDD vs. código (revisado 19/10/2026, tras los commits `3b5a253` y `61ea9d0`). **Cerradas**, verificar que sigan así antes de cada tarea:
 
-- Puntaje: al llegar a 100 se gana 1 hoja y el puntaje vuelve a 0 — implementado en `src/domain/Score.js`.
-- Tronco (los 3 niveles lo listan) y arena movediza — implementados (`log`, `sand` en `Preloader.js`; colisión y ralentizado en `Game.js`).
-- Niveles 2 (Desierto) y 3 (Bosque) con transiciones — `src/levels/index.js`, `level2.js`, `level3.js`, `src/domain/Progression.js`.
-- Nivel 1 sin tronco — agregado en `src/levels/level1.js`.
-- Ambigüedad águila/Nivel 3 — resuelta en el GDD: `sección "NIVEL 3: BOSQUE"` ahora incluye al águila (jefe final).
-- Lengua-cuerda de desplazamiento — implementada en `src/entities/TongueRope.js` (anclas fijas, tecla C).
+- Puntaje: al llegar a 100 se gana 1 hoja y el puntaje vuelve a 0 — `src/domain/Score.js`.
+- Tronco y arena movediza — `log`, `sand` en `Preloader.js`; colisión y ralentizado en `Game.js`.
+- Cactus fuera del Nivel 1 — `LEVEL1.cacti: []` (GDD no lo lista en Pantano).
+- Carga en Phaser 4 — `Group.children.forEach` (el `Set` nativo no tiene `each`).
+- Sprites reales de rana, cangrejo y erizo — `public/*.png` cargados en `Preloader` con mockup de respaldo.
+- Nivel 1 largo (~2240 px) con dificultad creciente por posición; derrota reinicia hojas/puntaje (`Progression.resetLevel`); hojas sin tope; erizo anti-pozo.
 
 Abiertas (decisiones pendientes, no inventar solución sin consultar):
 
-- `sección "NIVEL 1: PANTANO"` lista barro, pozos, espinas y tronco, pero `LEVEL1` incluye además un **cactus**: ¿se mantiene como obstáculo general o se retira del nivel?
-- La lengua-cuerda solo tiene gatillo de teclado (**C**); no hay activación táctil (la captura sí responde a clic).
-- El HUD no muestra la vida del jefe águila (el GDD no lo exige; es UX opcional).
-- `public/` y `assets/` sin trackear: sin commitear, el fondo `bgPantano` falla con 404 en otras máquinas y Phaser detiene la carga.
-- Legacy sin eliminar: `src/config/LevelConfig.js`, `src/entities/Health.js`, `src/entities/EnemyFactory.js`.
+- **Contradicción GDD ↔ código:** el GDD lista `sección "NIVEL 2: DESIERTO"`, `sección "NIVEL 3: BOSQUE"` y "en el último nivel se enfrentará al jefe", pero `src/levels/index.js` registra **un único nivel (Pantano) sin águila** — decisión del usuario del 19/10/2026, anotada en el código. No modificar el GDD ni reactivar el multinivel sin pedido explícito.
+- **Exclusión mutua de la lengua (Mecánica principal):** mientras `rope.attached` no debe poder atacarse; `Game.js` dispara `X` sin comprobarlo. Fuera del alcance de la tarea del 19/10 por decisión del usuario.
+- **"Subir de arriba a abajo" con la cuerda:** `TongueRope` solo hace péndulo de longitud fija; no hay mecanismo de izar/acortar.
+- `physics.debug = true` en `src/main.js` (decisión del usuario: se deja activo por ahora).
+- `public/rana.png`, `public/cangrejo.png`, `public/erizo.png` sin trackear: si no se commitean, el 404 detiene la carga en otra máquina (el respaldo de mockups no llega a ejecutarse).
+- Legacy sin eliminar: `src/config/LevelConfig.js`, `src/entities/Health.js`, `src/entities/EnemyFactory.js`; además `level2.js`, `level3.js` y `Eagle.js` conservados sin registrar.
 
 Estas brechas son notas de revisión con fecha y pueden quedar desactualizadas: contrastar siempre contra el GDD vigente y el código real.
 
@@ -100,7 +102,7 @@ Si la herramienta no está disponible, preguntar en la conversación y esperar.
 ## 5. Utilizar POO y patrones de diseño
 
 - Stack: JavaScript ESM, Phaser 4 + Vite 6. Respetar la arquitectura Phaser (Scene, preload/create/update, física arcade, GameObjects) y las convenciones del proyecto.
-- Modelar el dominio con POO: `Player`, `Enemy` y variantes (`Crab`, `Hedgehog`, `Wasp`, `Fly`, `Eagle`), `Tongue`, `TongueRope`, `Health`, `Score`, `Progression`, `HUD`, `EntityFactory`. Aún no implementadas según el GDD: pickups con sprite propio (mosca/mariposa usan mockups) — no inventar su API sin consultar.
+- Modelar el dominio con POO: `Player`, `Enemy` y variantes (`Crab`, `Hedgehog`, `Wasp`, `Fly`, y `Eagle` — clase existente pero **sin registrar** hoy), `Tongue`, `TongueRope`, `Health`, `Score`, `Progression`, `HUD`, `EntityFactory`. Aún no implementadas según el GDD: exclusión mutua lengua-ataque, izar/bajar con la cuerda, pickups con sprite propio (mosca/mariposa usan mockups) — no inventar su API sin consultar.
 - Encapsular estado y reglas; alta cohesión, bajo acoplamiento; preferir composición sobre herencia profunda.
 - Separar lógica de dominio de `Scene`, render e input: la Scene orquesta; las reglas viven en clases de `src/domain/` y `src/entities/`.
 - Usar patrones solo con necesidad concreta y explicar brevemente la elección:
@@ -124,7 +126,7 @@ Códigos canónicos frente a legacy:
 
 - Usar `src/domain/Health.js` (EventEmitter) — `src/entities/Health.js` está en desuso.
 - Usar `src/domain/EntityFactory.js` — `src/entities/EnemyFactory.js` no se importa en ningún lado.
-- Usar `src/levels/index.js` (`LEVELS`) y `src/levels/level1.js|level2.js|level3.js` — `src/config/LevelConfig.js` es legacy no usado.
+- Usar `src/levels/index.js` (`LEVELS`, hoy `[LEVEL1]`) y `src/levels/level1.js` — `level2.js` y `level3.js` existen sin registrar; `src/config/LevelConfig.js` es legacy no usado.
 - Usar `src/domain/Progression.js` (singleton por módulo) para hojas, puntaje e índice de nivel entre escenas; no crear otra instancia de estado global.
 - No crear un segundo `Health`, factory, registro de niveles ni config de nivel.
 
@@ -135,9 +137,10 @@ Si no existe código reutilizable (nuevos pickups, plataformas móviles, transic
 Cuando se necesiten sprites u otros recursos:
 
 1. Revisar los recursos disponibles:
-   - `public/`: fondo real del Nivel 1 (`Pantano Titan Croar.png`, cargado en `Preloader` como `bgPantano`); es lo que Vite sirve en dev y build. **Está sin trackear:** si no se commitea, la carga falla con 404 y el juego no arranca en otra máquina.
-   - `assets/`: 4 PNG sin trackear (`RANA TITAN CROAR1.png`, `PUERCO ESPÍN.png`, `Pantano Titan Croar.png`, `Cangrejo acorazado.png`); hoy no se cargan en el juego salvo la copia en `public/`.
-   - `src/scenes/Preloader.js`: mockups por `generateTexture` (`player`, `crab`, `hedgehog`, `wasp`, `fly`, `butterfly`, `tile`, `spike`, `mud`, `cactus`, `goal`, `log`, `anchor`, `sand`, `eagle`, `feather`).
+   - `public/` (trackeado): fondo `Pantano Titan Croar.png` (clave `bgPantano`).
+   - `public/` **sin trackear**: `rana.png`, `cangrejo.png`, `erizo.png` — sprites reales ya cargados en `Preloader` (claves `player`, `crab`, `hedgehog`); si no se commitean, el 404 detiene la carga en otra máquina.
+   - `assets/` (trackeado): originales `RANA TITAN CROAR1.png`, `PUERCO ESPÍN.png`, `Pantano Titan Croar.png`, `Cangrejo acorazado.png` — ya copiados a `public/` con nombre ASCII; de donde salen los próximos recursos.
+   - `src/scenes/Preloader.js`: mockups por `generateTexture` como respaldo (`textures.exists`) — `player`, `crab`, `hedgehog` solo si falla la imagen real, y siempre `fly`, `butterfly`, `tile`, `spike`, `mud`, `cactus`, `goal`, `log`, `anchor`, `sand`, `eagle`, `feather`.
 2. Antes de implementar lo visual, usar la herramienta de preguntas para confirmar:
    - **Generar un mockup:** representación provisional para validar la funcionalidad.
    - **Utilizar un recurso existente:** pedir el nombre exacto (por ejemplo uno de los PNG de `assets/`).
@@ -161,7 +164,7 @@ Estado conocido: repositorio con remoto `origin` (GitHub `marcosarecobravo-star/
   - No trabajar directamente sobre `main`, `master` o `develop`.
 - Si ya existe una rama apropiada, verificar si corresponde continuar en ella.
 - Si no hay estrategia definida para la tarea, consultar rama base, convención de nombres y remoto.
-- Preservar cambios previos del usuario (hoy: `D Docs/GDD_DT2.docx`, `?? Docs/GDD_TC.docx`, trabajo multinivel sin commitear, `?? public/` y `?? assets/`); si interfieren, consultar antes de moverlos, descartarlos o mezclarlos.
+- Preservar cambios previos del usuario (hoy: `M Docs/GDD_TC.docx`, `M src/main.js` con `debug: true`, ajustes de `Boot/Preloader/Game/Crab/Enemy/Hedgehog` y `?? public/{rana,cangrejo,erizo}.png`); si interfieren, consultar antes de moverlos, descartarlos o mezclarlos.
 - Si no hubiera repositorio o remoto, informarlo y consultar antes de inicializarlo o configurarlo.
 
 ## 9. Implementar y verificar
