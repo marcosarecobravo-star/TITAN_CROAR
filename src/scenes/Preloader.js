@@ -26,6 +26,14 @@ export default class Preloader extends Phaser.Scene {
     // Fondo del Nivel 1: PNG existente (decisión del usuario). Copiado a
     // public/ para que Vite lo sirva también en build (assets/ no se copia).
     this.load.image('bgPantano', 'Pantano%20Titan%20Croar.png');
+    // Sprites reales del jugador y enemigos (decisión del usuario):
+    // rana.png (assets/RANA TITAN CROAR1.png), cangrejo.png
+    // (assets/Cangrejo acorazado.png), erizo.png (assets/PUERCO ESPÍN.png).
+    // Copiados a public/ con nombre ASCII. Si la carga falla, los mockups de
+    // create() (que verifican textures.exists) siguen como respaldo.
+    this.load.image('player', 'rana.png');
+    this.load.image('crab', 'cangrejo.png');
+    this.load.image('hedgehog', 'erizo.png');
   }
 
   create() {

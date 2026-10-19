@@ -8,6 +8,9 @@ import Enemy from './Enemy.js';
 export default class Crab extends Enemy {
   constructor(scene, x, y, opts = {}) {
     super(scene, x, y, 'crab', { hp: 2, avoidPits: true, ...opts });
-    this.setSize(40, 26);
+    // Sprite real (cangrejo.png, cuadrado 192x192) escalado a 96x96; el
+    // cuerpo físico (88x64) se centra para que la colisión sea fiel al sprite.
+    this.setDisplaySize(96, 96);
+    this.setSize(88, 64);
   }
 }

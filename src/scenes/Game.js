@@ -115,10 +115,11 @@ export default class Game extends Phaser.Scene {
     this.anchors = this.level.anchors ?? [];
     for (const a of this.anchors) this.add.image(a.x, a.y, 'anchor').setDepth(4);
 
-    // --- Jugador (sapo gigante, mockup) ---
+    // --- Jugador (sapo gigante, sprite real rana.png escalado a 48x48) ---
     this.player = this.physics.add.sprite(this.level.spawn.x, this.level.spawn.y, 'player');
     this.player.setCollideWorldBounds(true);
-    this.player.setSize(30, 46);
+    this.player.setDisplaySize(64, 64);
+    this.player.setSize(48, 56);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
     // --- Lengua-captura (mockup: rectángulo temporal, sin sprites externos) ---
@@ -204,10 +205,18 @@ export default class Game extends Phaser.Scene {
   onPlayerEnemy(enemy) {
     if (this.won || this.over || enemy.dead) return;
     if (enemy.texture.key === 'fly') return; // mosca inofensiva al contacto
-    const falling = (this.player.body.velocity.y ?? 0) > 60;
-    const playerBottom = this.player.body.bottom;
-    const enemyTop = enemy.body.top;
-    const fromAbove = falling && playerBottom - enemyTop < 22;
+    const playerBody = this.player.body;
+    const enemyBody = enemy.body;
+    const velocityY = playerBody.velocity.y ?? 0;
+    const falling = velocityY > 0;
+    // Pisotón robusto: el jugador estaba por encima del enemigo el frame
+    // anterior (wasAbove) O sus pies están a la altura/por encima del centro
+    // vertical del enemigo este frame. Cubre el caso en que el collider
+    // dispara antes de la separación o como colisión lateral pese a venir de
+    // arriba (el jugador cae con algo de velocidad horizontal).
+    const wasAbove = !!playerBody.prev && !!enemyBody.prev &&
+      (playerBody.prev.y + playerBody.height) <= (enemyBody.prev.y + 6);
+    const fromAbove = falling && (playerBody.bottom <= enemyBody.center.y + 6 || wasAbove);
 
     if (fromAbove) {
       // Erizo inmune (GDD): el pisotón daña al jugador, no al enemigo.
@@ -218,7 +227,9 @@ export default class Game extends Phaser.Scene {
       // Jefe: recibe varios golpes (GDD: "golpearlo varias veces").
       enemy.stomp();
       this.player.setVelocityY(BOUNCE_AFTER_STOMP);
-    } else {
+    } else if (velocityY >= 0) {
+      // Solo daña si el jugador no está rebotando tras un pisotón
+      // (velocityY < 0): evita el daño fantasma en los frames siguientes.
       this.hurtPlayer();
     }
   }
@@ -239,12 +250,24 @@ export default class Game extends Phaser.Scene {
 
   fireTongue(dir) {
     if (this.won || this.over) return;
+    // GDD Mecánica: mientras la cuerda está enganchada no se puede atacar
+    // a los insectos con la lengua (exclusión mutua).
+    if (this.rope.attached) {
+      this.flashMessage('Lengua ocupada', 'Soltá la cuerda (C o Espacio)');
+      return;
+    }
     if (!this.tongue.fire(this.time.now, dir)) return;
     const r = this.tongue.rect(this.player.x, this.player.y, this.player.displayWidth / 2);
     this.tongueView.setPosition((r.x0 + r.x1) / 2, r.y).setVisible(true);
   }
 
   resolveTongueCaptures(now) {
+    // GDD Mecánica: exclusión mutua — con la cuerda enganchada no hay
+    // captura (ni se dibuja la lengua).
+    if (this.rope.attached) {
+      this.tongueView.setVisible(false);
+      return;
+    }
     if (!this.tongue.isActive(now)) {
       this.tongueView.setVisible(false);
       return;
@@ -267,6 +290,18 @@ export default class Game extends Phaser.Scene {
         this.score.add(POINTS.FLY);
       }
     }
+  }
+
+  // Mensaje efímero (feedback de reglas, p. ej. exclusión mutua de la lengua).
+  flashMessage(main, sub = '') {
+    const { width } = this.cameras.main;
+    const t = this.add.text(width / 2, 90, main, {
+      fontSize: '16px', color: '#ffe66d', stroke: '#000000', strokeThickness: 3,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
+    const subT = sub ? this.add.text(width / 2, 112, sub, {
+      fontSize: '12px', color: '#dddddd', stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(20) : null;
+    this.time.delayedCall(900, () => { t.destroy(); if (subT) subT.destroy(); });
   }
 
   win() {
@@ -320,21 +355,33 @@ export default class Game extends Phaser.Scene {
 
     const left = this.cursors.left.isDown || this.keys.A.isDown;
     const right = this.cursors.right.isDown || this.keys.D.isDown;
-    const jump = this.cursors.up.isDown || this.keys.W.isDown || this.cursors.space?.isDown;
 
     if (left && !right) { p.setVelocityX(-speed); this.facing = -1; }
     else if (right && !left) { p.setVelocityX(speed); this.facing = 1; }
     else p.setVelocityX(0);
+    // La rana mira hacia la dirección de movimiento.
+    this.player.setFlipX(this.facing < 0);
 
-    if (jump && p.body.blocked.down) {
-      this.rope.detach(); // saltar suelta la cuerda
-      p.setVelocityY(JUMP);
+    // Lengua-cuerda: mientras esté enganchada, ↑ trepa (acorta la cuerda) y
+    // ↓ baja (la alarga); C o Espacio la sueltan. Fuera de la cuerda, salto
+    // normal (GDD: "poder subir de arriba a abajo" + exclusión mutua).
+    if (this.rope.attached) {
+      if (this.cursors.up.isDown || this.keys.W.isDown) this.rope.climb(-1, delta);
+      else if (this.cursors.down.isDown || this.keys.S.isDown) this.rope.climb(1, delta);
+      if (Phaser.Input.Keyboard.JustDown(this.keys.space) || Phaser.Input.Keyboard.JustDown(this.keys.C)) {
+        this.rope.detach();
+        if (Phaser.Input.Keyboard.JustDown(this.keys.space)) p.setVelocityY(JUMP);
+      }
+    } else {
+      const jumpPressed = Phaser.Input.Keyboard.JustDown(this.cursors.up)
+        || Phaser.Input.Keyboard.JustDown(this.keys.W)
+        || Phaser.Input.Keyboard.JustDown(this.keys.space);
+      if (jumpPressed && p.body.blocked.down) p.setVelocityY(JUMP);
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.X)) this.fireTongue(this.facing);
-    // Lengua-cuerda: C engancha/desengancha al ancla más cercana.
-    if (Phaser.Input.Keyboard.JustDown(this.keys.C)) {
-      if (this.rope.attached) this.rope.detach();
-      else this.rope.tryAttach(p, this.anchors);
+    // Enganche a un ancla (solo si no está enganchado).
+    if (!this.rope.attached && Phaser.Input.Keyboard.JustDown(this.keys.C)) {
+      this.rope.tryAttach(p, this.anchors);
     }
     this.rope.update(p);
     this.drawRope();

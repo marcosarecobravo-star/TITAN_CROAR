@@ -8,21 +8,9 @@ function makeTextures(scene) {
     draw(g, w, h);
     g.generateTexture(key, w, h);
   };
-  // Mockups provisionales (no son sprites finales)
-  gen('player', 32, 48, (g, w, h) => {
-    g.fillStyle(0x2ecc71, 1); g.fillRect(0, 0, w, h);
-    g.fillStyle(0xffffff, 1); g.fillCircle(10, 12, 5); g.fillCircle(22, 12, 5);
-    g.fillStyle(0x000000, 1); g.fillCircle(10, 12, 2); g.fillCircle(22, 12, 2);
-  });
-  gen('crab', 40, 28, (g, w, h) => {
-    g.fillStyle(0xe74c3c, 1); g.fillRoundedRect(0, 4, w, h - 4, 6);
-    g.fillStyle(0xc0392b, 1); g.fillCircle(4, 8, 5); g.fillCircle(w - 4, 8, 5);
-  });
-  gen('hedgehog', 40, 32, (g, w, h) => {
-    g.fillStyle(0x5d4037, 1); g.fillEllipse(w / 2, h / 2 + 4, w, h - 8);
-    g.fillStyle(0x212121, 1);
-    for (let x = 4; x < w; x += 7) g.fillTriangle(x, 12, x + 3, 0, x + 6, 12);
-  });
+  // Mockups provisionales (no son sprites finales). El jugador, el cangrejo
+  // y el erizo se cargan como imagen real en Preloader (rana.png,
+  // cangrejo.png, erizo.png) con mockups de respaldo en Preloader.make.
   gen('spike', 32, 24, (g, w, h) => {
     g.fillStyle(0x95a5a6, 1);
     g.fillTriangle(0, h, 8, 0, 16, h);

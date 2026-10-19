@@ -7,8 +7,9 @@ import Phaser from 'phaser';
 // Patrón State: estado desplegado/enganchado encapsulado en la clase;
 // la Scene solo llama tryAttach/detach/update y dibuja la cuerda.
 export default class TongueRope {
-  constructor({ maxRange = 220 } = {}) {
+  constructor({ maxRange = 220, climbSpeed = 120 } = {}) {
     this.maxRange = maxRange;
+    this.climbSpeed = climbSpeed;
     this.attached = false;
     this.anchor = null;
     this.length = 0;
@@ -31,6 +32,19 @@ export default class TongueRope {
     this.anchor = best;
     this.length = bestDist;
     return best;
+  }
+
+  // Trepar/descender: acorta (dir < 0) o alarga (dir > 0) la cuerda.
+  // GDD Mecánica: "poder subir de arriba a abajo" mientras se está
+  // enganchado. El update() proyecta al jugador sobre la circunferencia.
+  climb(dir, delta = 16) {
+    if (!this.attached) return;
+    const speed = this.climbSpeed * (delta / 1000);
+    this.length = Phaser.Math.Clamp(
+      this.length + dir * speed,
+      40,
+      this.maxRange,
+    );
   }
 
   detach() {

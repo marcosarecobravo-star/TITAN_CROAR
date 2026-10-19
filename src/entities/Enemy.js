@@ -27,6 +27,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   update(...args) {
     if (this.dead || !this.body) return;
     this.updateBehaviour(...args);
+    // Voltear sprite según la dirección real de movimiento (equivalente al
+    // flip de la rana): patrulla (dir) o velocidad horizontal (picada).
+    const vx = this.body.velocity.x;
+    if (vx !== 0) this.setFlipX(vx < 0);
+    else this.setFlipX(this.dir < 0);
   }
 
   // eslint-disable-next-line no-unused-vars

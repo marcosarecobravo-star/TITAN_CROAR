@@ -7,7 +7,10 @@ import Enemy from './Enemy.js';
 export default class Hedgehog extends Enemy {
   constructor(scene, x, y, opts = {}) {
     super(scene, x, y, 'hedgehog', { hp: Infinity, avoidPits: true, ...opts });
-    this.setSize(40, 26);
+    // Sprite real (erizo.png, cuadrado 192x192) escalado a 48x48; cuerpo
+    // físico 40x32 centrado.
+    this.setDisplaySize(64, 64);
+    this.setSize(56, 44);
   }
 
   stomp() {
