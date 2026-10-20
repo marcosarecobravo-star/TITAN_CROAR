@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import Health from './Health.js';
+import Health from '../domain/Health.js'; // canónica (AGENTS §5-6); legacy src/entities/Health.js en desuso
 
 const STATE = { IDLE: 'idle', RUN: 'run', JUMP: 'jump', HURT: 'hurt' };
 
@@ -64,12 +64,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   takeDamage(scene, time) {
-    if (time < this.invulnUntil || !this.health.alive) return false;
+    if (time < this.invulnUntil || this.health.isDead()) return false;
     this.health.damage(1);
     this.invulnUntil = time + 1000;
     this.state = STATE.HURT;
-    scene.events.emit('health-changed', this.health.current);
-    if (!this.health.alive) scene.events.emit('player-died');
+    // Nota: Player no se usa en Game actual (usa sprite + domain/Health directo);
+    // se mantiene migrado a la Health canónica para futura reutilización.
+    scene.events.emit('health-changed', this.health.lives);
+    if (this.health.isDead()) scene.events.emit('player-died');
     return true;
   }
 }
