@@ -36,10 +36,12 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   // eslint-disable-next-line no-unused-vars
   updateBehaviour(time, delta, player) {
-    // Anti-pozo: a ras de suelo, si justo por delante no hay sólido, gira.
+    // Anti-pozo: a ras de cualquier sólido (suelo o plataforma), si justo por
+    // delante no hay sólido, gira. Se aplica a cangrejo y erizo (avoidPits).
+    // Se quitó la restricción de altura (groundY) para que los enemigos que
+    // patrullan plataformas también eviten caerse de ellas.
     if (
-      this.avoidPits && this.body?.blocked.down
-      && this.y > this.groundY - 90 && this.pitAhead()
+      this.avoidPits && this.body?.blocked.down && this.pitAhead()
     ) {
       this.dir *= -1;
     }

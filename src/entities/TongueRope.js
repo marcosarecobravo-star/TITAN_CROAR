@@ -7,7 +7,7 @@ import Phaser from 'phaser';
 // Patrón State: estado desplegado/enganchado encapsulado en la clase;
 // la Scene solo llama tryAttach/detach/update y dibuja la cuerda.
 export default class TongueRope {
-  constructor({ maxRange = 220, climbSpeed = 120 } = {}) {
+  constructor({ maxRange = 380, climbSpeed = 120 } = {}) {
     this.maxRange = maxRange;
     this.climbSpeed = climbSpeed;
     this.attached = false;
@@ -47,7 +47,15 @@ export default class TongueRope {
     );
   }
 
-  detach() {
+  // Suelta la cuerda. Al soltar se conserva la velocidad tangencial (y se
+  // amplifica con `boost`) para que el jugador salga despedido en trayectoria
+  // parabólica bajo la gravedad (efecto de "tiro" al soltar el balanceo).
+  detach(player = null, boost = 1.5) {
+    if (!this.attached) return;
+    if (player?.body) {
+      const v = player.body.velocity;
+      player.body.setVelocity(v.x * boost, v.y * boost);
+    }
     this.attached = false;
     this.anchor = null;
   }

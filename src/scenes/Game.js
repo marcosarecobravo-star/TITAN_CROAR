@@ -40,10 +40,10 @@ export default class Game extends Phaser.Scene {
     this.isLastLevel = this.levelIndex >= LEVELS.length - 1;
     this.lastSafe = { ...this.level.spawn };
 
-    this.physics.world.setBounds(0, 0, this.level.worldWidth, 600);
+    this.physics.world.setBounds(0, -300, this.level.worldWidth, 900);
     // Sin colisión inferior: el pozo debe dejar caer al jugador.
     this.physics.world.setBoundsCollision(true, true, true, false);
-    this.cameras.main.setBounds(0, 0, this.level.worldWidth, 600);
+    this.cameras.main.setBounds(0, -300, this.level.worldWidth, 900);
     if (this.level.bgColor) this.cameras.main.setBackgroundColor(this.level.bgColor);
 
     // Fondo del Nivel 1: PNG real (mockup de tema por nivel si no hay imagen).
@@ -62,10 +62,9 @@ export default class Game extends Phaser.Scene {
     this.score.on('extra-life', (n) => {
       for (let i = 0; i < n; i += 1) this.health.heal(1);
     });
-    this.hud = new HUD(this, this.health, this.score);
-    this.add.text(12, 34, `Nivel ${this.levelIndex + 1} — ${this.level.name} | X: lengua | C: cuerda`, {
-      fontSize: '13px', color: '#aaaaaa',
-    }).setScrollFactor(0).setDepth(10);
+    this.hud = new HUD(this, this.health, this.score, 300);
+    this.timeLimit = 300;
+    this.timeLeft = this.timeLimit;
     this.health.on('changed', (lives) => {
       progression.lives = lives;
       if (lives <= 0 && !this.over) this.lose();
@@ -208,15 +207,24 @@ export default class Game extends Phaser.Scene {
     const playerBody = this.player.body;
     const enemyBody = enemy.body;
     const velocityY = playerBody.velocity.y ?? 0;
-    const falling = velocityY > 0;
-    // Pisotón robusto: el jugador estaba por encima del enemigo el frame
-    // anterior (wasAbove) O sus pies están a la altura/por encima del centro
-    // vertical del enemigo este frame. Cubre el caso en que el collider
-    // dispara antes de la separación o como colisión lateral pese a venir de
-    // arriba (el jugador cae con algo de velocidad horizontal).
-    const wasAbove = !!playerBody.prev && !!enemyBody.prev &&
-      (playerBody.prev.y + playerBody.height) <= (enemyBody.prev.y + 6);
-    const fromAbove = falling && (playerBody.bottom <= enemyBody.center.y + 6 || wasAbove);
+    // Pisotón robusto: no depende de la velocidad en el momento de la
+    // colisión (que puede haberse anulado al aterrizar). Se considera
+    // pisotón si el jugador estaba por encima del enemigo el frame anterior
+    // (_playerPrevBottom, registrado en update()) o si sus pies quedan por
+    // encima del centro vertical del enemigo este frame.
+    const wasAbove = (this._playerPrevBottom != null) &&
+      this._playerPrevBottom <= enemyBody.center.y + 8;
+    const fromAbove = wasAbove || (playerBody.bottom <= enemyBody.center.y + 8);
+
+    // Diagnóstico temporal (quitar cuando el pisotón quede estable).
+    // eslint-disable-next-line no-console
+    console.log('[stomp]', enemy.texture.key,
+      'vy=', velocityY.toFixed(0),
+      'wasAbove=', wasAbove,
+      'fromAbove=', fromAbove,
+      'prevBottom=', this._playerPrevBottom,
+      'bottom=', playerBody.bottom.toFixed(0),
+      'enemyCenter=', enemyBody.center.y.toFixed(0));
 
     if (fromAbove) {
       // Erizo inmune (GDD): el pisotón daña al jugador, no al enemigo.
@@ -233,7 +241,7 @@ export default class Game extends Phaser.Scene {
       this.hurtPlayer();
     }
   }
-
+  
   hurtPlayer() {
     if (this.won || this.over) return;
     const now = this.time.now;
@@ -314,7 +322,7 @@ export default class Game extends Phaser.Scene {
     this.won = true;
     this.player.setVelocity(0, 0);
     this.player.body.setAllowGravity(false);
-    this.rope.detach();
+    this.rope.detach(this.player);
     this.hud.message('¡Nivel superado!', 'Avanzando al siguiente nivel…');
     // Transición automática (decisión usuario); R sigue como atajo.
     this.time.delayedCall(1500, () => {
@@ -329,7 +337,7 @@ export default class Game extends Phaser.Scene {
     this.won = true;
     this.player.setVelocity(0, 0);
     this.player.body.setAllowGravity(false);
-    this.rope.detach();
+    this.rope.detach(this.player);
     this.hud.message('¡Juego completado!', 'Presioná R para jugar de nuevo');
   }
 
@@ -338,17 +346,30 @@ export default class Game extends Phaser.Scene {
     this.over = true;
     this.player.setVelocity(0, 0);
     this.player.setTint(0xff0000);
-    this.rope.detach();
+    this.rope.detach(this.player);
     this.hud.message('Sin hojas — derrotado', 'Presioná R para empezar desde 0');
   }
 
   update(time, delta) {
+    // Registrar la posición previa del jugador (pies) para la detección de
+    // pisotón robusta en onPlayerEnemy (el collider de Phaser puede disparar
+    // con la velocidad ya anulada al aterrizar).
+    if (this.player?.body) this._playerPrevBottom = this.player.body.bottom;
     // Plumas fuera de pantalla: limpieza. Phaser 4: Group.children es un Set
     // nativo (forEach), no el Structs.Set de Phaser 3 (que tenía each).
     this.feathers.children.forEach((f) => {
       if (f.active && (f.y > 640 || f.x < -40 || f.x > this.level.worldWidth + 40)) f.destroy();
     });
     if (this.won || this.over) return;
+    // Temporizador de cuenta regresiva (arriba a la derecha).
+    this.timeLeft -= delta / 1000;
+    if (this.timeLeft <= 0) {
+      this.timeLeft = 0;
+      this.hud.updateTimer(0);
+      this.lose();
+      return;
+    }
+    this.hud.updateTimer(this.timeLeft);
     const p = this.player;
     const inSlow = this.physics.overlap(p, this.slowZones);
     const speed = inSlow ? SPEED * 0.5 : SPEED;
@@ -368,14 +389,14 @@ export default class Game extends Phaser.Scene {
     if (this.rope.attached) {
       if (this.cursors.up.isDown || this.keys.W.isDown) this.rope.climb(-1, delta);
       else if (this.cursors.down.isDown || this.keys.S.isDown) this.rope.climb(1, delta);
-      if (Phaser.Input.Keyboard.JustDown(this.keys.space) || Phaser.Input.Keyboard.JustDown(this.keys.C)) {
-        this.rope.detach();
-        if (Phaser.Input.Keyboard.JustDown(this.keys.space)) p.setVelocityY(JUMP);
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.space) || Phaser.Input.Keyboard.JustDown(this.keys.C)) {
+        this.rope.detach(this.player);
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.space)) p.setVelocityY(JUMP);
       }
     } else {
       const jumpPressed = Phaser.Input.Keyboard.JustDown(this.cursors.up)
         || Phaser.Input.Keyboard.JustDown(this.keys.W)
-        || Phaser.Input.Keyboard.JustDown(this.keys.space);
+        || Phaser.Input.Keyboard.JustDown(this.cursors.space);
       if (jumpPressed && p.body.blocked.down) p.setVelocityY(JUMP);
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.X)) this.fireTongue(this.facing);
@@ -391,7 +412,7 @@ export default class Game extends Phaser.Scene {
 
     // caída al pozo: 1 hoja + respawn (supuesto; GDD solo dice que hay pozos)
     if (p.y > 660) {
-      this.rope.detach();
+      this.rope.detach(this.player);
       p.setPosition(this.lastSafe.x, this.lastSafe.y);
       p.setVelocity(0, 0);
       this.invulnerableUntil = 0;

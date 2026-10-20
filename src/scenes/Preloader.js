@@ -126,6 +126,6 @@ export default class Preloader extends Phaser.Scene {
       g.fillStyle(0xb0a890, 1).fillRect(3, 2, 2, 14);
     });
     // Fondo del Nivel 1 (bgPantano): se carga en preload() desde public/.
-    this.scene.start('Game');
+    this.scene.start('MainMenu');
   }
 }

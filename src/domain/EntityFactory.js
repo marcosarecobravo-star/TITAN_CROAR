@@ -10,14 +10,14 @@ export default class EntityFactory {
   static createEnemies(scene, config) {
     const list = [];
     for (const c of config.crabs ?? []) {
-      list.push(new Crab(scene, c.x, 520, {
+      list.push(new Crab(scene, c.x, c.y ?? 520, {
         patrolMin: c.x - c.range,
         patrolMax: c.x + c.range,
         speed: c.speed,
       }));
     }
     for (const h of config.hedgehogs ?? []) {
-      list.push(new Hedgehog(scene, h.x, 520, {
+      list.push(new Hedgehog(scene, h.x, h.y ?? 520, {
         patrolMin: h.x - h.range,
         patrolMax: h.x + h.range,
         speed: h.speed,
