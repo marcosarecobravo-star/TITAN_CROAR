@@ -62,8 +62,8 @@ export default class Game extends Phaser.Scene {
     this.score.on('extra-life', (n) => {
       for (let i = 0; i < n; i += 1) this.health.heal(1);
     });
-    this.hud = new HUD(this, this.health, this.score, 300);
-    this.timeLimit = 300;
+    this.hud = new HUD(this, this.health, this.score, this.level.timeLimit ?? 300);
+    this.timeLimit = this.level.timeLimit ?? 300;
     this.timeLeft = this.timeLimit;
     this.health.on('changed', (lives) => {
       progression.lives = lives;

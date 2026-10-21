@@ -57,7 +57,12 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     const solids = this.scene.solids?.getChildren?.() ?? [];
     if (solids.length === 0) return false;
     const aheadX = this.x + this.dir * probe;
-    return !solids.some((s) => Math.abs(s.x - aheadX) < s.displayWidth / 2);
+    // Solo cuenta un sólido si está a la altura del enemigo (evita que el
+    // suelo lejano "tape" el hueco al borde de una plataforma).
+    return !solids.some((s) =>
+      Math.abs(s.x - aheadX) < s.displayWidth / 2 &&
+      Math.abs(s.y - this.y) < 40
+    );
   }
 
   // Devuelve true si el enemigo murió con este pisotón.

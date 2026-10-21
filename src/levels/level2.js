@@ -1,55 +1,190 @@
-// Config del Nivel 2 — DESIERTO (GDD sección "NIVEL 2: DESIERTO":
-// cactus, pozos y arenas movedizas; cangrejo, avispa y erizo).
-// Supuesto: layout propio porque el GDD no define posiciones.
+// Nivel 2 — DESIERTO (GDD sección "NIVEL 2: DESIERTO": cactus, pozos y
+// arenas movedizas; cangrejo, avispa y erizo). Mayor que el Nivel 1 (~7000 px).
+// 6 pozos, plataformas en 5 alturas (baja/media/alta/muy alta/extrema) y
+// enemigos en las plataformas superiores.
+// Obstáculos: cactus (pared, daña), arena movediza (ralentiza), pozos, troncos.
+// Sin águila jefe (eso es Nivel 3).
 export const LEVEL2 = {
   name: 'Desierto',
   spawn: { x: 60, y: 450 },
-  bgColor: '#e8b86d', // mockup de tema (sin sprite de fondo).
+  bgColor: '#e8b86d', // mockup de tema (sin sprite de fondo real).
+  // 7 segmentos de suelo = 6 pozos.
   grounds: [
-    { x: 0, y: 560, w: 420 },
-    { x: 540, y: 560, w: 380 },
-    { x: 1040, y: 560, w: 460 },
+    { x: 0, y: 560, w: 900 },      // Z1 (tutorial)
+    { x: 1000, y: 560, w: 900 },   // Z2
+    { x: 2000, y: 560, w: 900 },   // Z3
+    { x: 3000, y: 560, w: 900 },   // Z4
+    { x: 4000, y: 560, w: 900 },   // Z5
+    { x: 5000, y: 560, w: 900 },   // Z6
+    { x: 6000, y: 560, w: 1000 },  // Z7 (final con bandera)
   ],
+  // Plataformas en 5 alturas: 440, 360, 280, 200, 130.
   platforms: [
-    { x: 260, y: 430, w: 130 },
-    { x: 640, y: 420, w: 140 },
-    { x: 1120, y: 440, w: 150 },
+    // Z1
+    { x: 300, y: 440, w: 150 },
+    { x: 520, y: 360, w: 140 },
+    { x: 700, y: 280, w: 130 },
+    { x: 450, y: 200, w: 120 },
+    { x: 620, y: 130, w: 110 },
+    // Z2
+    { x: 1200, y: 440, w: 150 },
+    { x: 1420, y: 360, w: 140 },
+    { x: 1600, y: 280, w: 130 },
+    { x: 1350, y: 200, w: 120 },
+    { x: 1520, y: 130, w: 110 },
+    // Z3
+    { x: 2200, y: 440, w: 150 },
+    { x: 2420, y: 360, w: 140 },
+    { x: 2600, y: 280, w: 130 },
+    { x: 2350, y: 200, w: 120 },
+    { x: 2520, y: 130, w: 110 },
+    // Z4
+    { x: 3200, y: 440, w: 150 },
+    { x: 3420, y: 360, w: 140 },
+    { x: 3600, y: 280, w: 130 },
+    { x: 3350, y: 200, w: 120 },
+    { x: 3520, y: 130, w: 110 },
+    // Z5
+    { x: 4200, y: 440, w: 150 },
+    { x: 4420, y: 360, w: 140 },
+    { x: 4600, y: 280, w: 130 },
+    { x: 4350, y: 200, w: 120 },
+    { x: 4520, y: 130, w: 110 },
+    // Z6
+    { x: 5200, y: 440, w: 150 },
+    { x: 5420, y: 360, w: 140 },
+    { x: 5600, y: 280, w: 130 },
+    { x: 5350, y: 200, w: 120 },
+    { x: 5520, y: 130, w: 110 },
+    // Z7 (final)
+    { x: 6200, y: 440, w: 150 },
+    { x: 6420, y: 360, w: 140 },
+    { x: 6600, y: 280, w: 130 },
+    { x: 6800, y: 440, w: 120 },
   ],
+  // Cangrejos (suelo y plataformas).
   crabs: [
-    { x: 300, range: 80, speed: 60 },
-    { x: 1180, range: 90, speed: 65 },
+    { x: 300, range: 100, speed: 55 },
+    { x: 450, y: 170, range: 40, speed: 60 },
+    { x: 620, y: 100, range: 30, speed: 65 },
+    { x: 1200, range: 90, speed: 60 },
+    { x: 1400, y: 330, range: 40, speed: 65 },
+    { x: 1600, y: 250, range: 30, speed: 70 },
+    { x: 2200, range: 90, speed: 65 },
+    { x: 2400, y: 330, range: 40, speed: 70 },
+    { x: 2600, y: 250, range: 30, speed: 75 },
+    { x: 3200, range: 90, speed: 70 },
+    { x: 3400, y: 330, range: 40, speed: 75 },
+    { x: 3600, y: 250, range: 30, speed: 80 },
+    { x: 4200, range: 90, speed: 75 },
+    { x: 4400, y: 330, range: 40, speed: 80 },
+    { x: 4600, y: 250, range: 30, speed: 85 },
+    { x: 5200, range: 90, speed: 80 },
+    { x: 5400, y: 330, range: 40, speed: 85 },
+    { x: 5600, y: 250, range: 30, speed: 90 },
+    { x: 6200, range: 90, speed: 85 },
+    { x: 6400, y: 330, range: 40, speed: 90 },
+    { x: 6600, y: 250, range: 30, speed: 95 },
+    { x: 6850, range: 20, speed: 100 },
   ],
+  // Erizos inmunes.
   hedgehogs: [
     { x: 700, range: 70, speed: 40 },
+    { x: 1100, y: 330, range: 40, speed: 45 },
+    { x: 1800, range: 60, speed: 45 },
+    { x: 2800, y: 330, range: 40, speed: 50 },
+    { x: 3800, range: 60, speed: 50 },
+    { x: 4800, y: 330, range: 40, speed: 55 },
+    { x: 5800, range: 60, speed: 55 },
+    { x: 6700, y: 330, range: 40, speed: 60 },
   ],
+  // Avispas.
   wasps: [
     { x: 480, y: 230, range: 100, speed: 75 },
+    { x: 800, y: 180, range: 90, speed: 80 },
     { x: 1250, y: 260, range: 80, speed: 70 },
+    { x: 1700, y: 220, range: 90, speed: 75 },
+    { x: 2100, y: 200, range: 100, speed: 80 },
+    { x: 2500, y: 240, range: 90, speed: 85 },
+    { x: 2900, y: 180, range: 100, speed: 90 },
+    { x: 3300, y: 220, range: 90, speed: 95 },
+    { x: 3700, y: 200, range: 100, speed: 100 },
+    { x: 4100, y: 240, range: 90, speed: 105 },
+    { x: 4500, y: 180, range: 100, speed: 110 },
+    { x: 4900, y: 220, range: 90, speed: 115 },
+    { x: 5300, y: 200, range: 100, speed: 120 },
+    { x: 5700, y: 240, range: 90, speed: 125 },
+    { x: 6100, y: 180, range: 100, speed: 130 },
+    { x: 6500, y: 220, range: 90, speed: 135 },
+    { x: 6850, y: 200, range: 100, speed: 140 },
   ],
-  // Arenas movedizas (GDD: reducen la velocidad temporalmente).
-  sands: [
-    { x: 600, y: 538, w: 130 },
-    { x: 1120, y: 538, w: 120 },
-  ],
+  // Cactus (pared, daña al tocar).
   cacti: [
     { x: 360, y: 512, w: 32, h: 64 },
     { x: 880, y: 512, w: 32, h: 64 },
     { x: 940, y: 512, w: 32, h: 64 },
     { x: 1380, y: 512, w: 32, h: 64 },
+    { x: 1880, y: 512, w: 32, h: 64 },
+    { x: 2380, y: 512, w: 32, h: 64 },
+    { x: 2440, y: 512, w: 32, h: 64 },
+    { x: 2880, y: 512, w: 32, h: 64 },
+    { x: 3380, y: 512, w: 32, h: 64 },
+    { x: 3440, y: 512, w: 32, h: 64 },
+    { x: 3880, y: 512, w: 32, h: 64 },
+    { x: 4380, y: 512, w: 32, h: 64 },
+    { x: 4440, y: 512, w: 32, h: 64 },
+    { x: 4880, y: 512, w: 32, h: 64 },
+    { x: 5380, y: 512, w: 32, h: 64 },
+    { x: 5440, y: 512, w: 32, h: 64 },
+    { x: 5880, y: 512, w: 32, h: 64 },
+    { x: 6380, y: 512, w: 32, h: 64 },
+    { x: 6440, y: 512, w: 32, h: 64 },
+    { x: 6880, y: 512, w: 32, h: 64 },
   ],
   spikes: [],
-  muds: [],
-  logs: [],
-  // Anclas de la lengua-cuerda sobre los pozos (mecánica global).
-  anchors: [
-    { x: 480, y: 290 },
-    { x: 990, y: 300 },
+  // Arenas movedizas (ralentizan).
+  sands: [
+    { x: 600, y: 538, w: 130 },
+    { x: 1120, y: 538, w: 120 },
+    { x: 1650, y: 538, w: 140 },
+    { x: 2180, y: 538, w: 130 },
+    { x: 2700, y: 538, w: 120 },
+    { x: 3220, y: 538, w: 140 },
+    { x: 3740, y: 538, w: 130 },
+    { x: 4260, y: 538, w: 120 },
+    { x: 4780, y: 538, w: 140 },
+    { x: 5300, y: 538, w: 130 },
+    { x: 5820, y: 538, w: 120 },
+    { x: 6340, y: 538, w: 140 },
+    { x: 6820, y: 538, w: 120 },
   ],
+  muds: [],
+  logs: [
+    { x: 980, y: 532, w: 72 },
+    { x: 1980, y: 532, w: 72 },
+    { x: 2980, y: 532, w: 72 },
+    { x: 3980, y: 532, w: 72 },
+    { x: 4980, y: 532, w: 72 },
+    { x: 5980, y: 532, w: 72 },
+  ],
+  // Moscas inofensivas.
   flies: [
     { x: 320, y: 380, range: 40 },
     { x: 700, y: 330, range: 40 },
     { x: 1200, y: 380, range: 40 },
+    { x: 1700, y: 330, range: 40 },
+    { x: 2200, y: 380, range: 40 },
+    { x: 2700, y: 330, range: 40 },
+    { x: 3200, y: 380, range: 40 },
+    { x: 3700, y: 330, range: 40 },
+    { x: 4200, y: 380, range: 40 },
+    { x: 4700, y: 330, range: 40 },
+    { x: 5200, y: 380, range: 40 },
+    { x: 5700, y: 330, range: 40 },
+    { x: 6200, y: 380, range: 40 },
+    { x: 6700, y: 330, range: 40 },
   ],
+  // Mariposas (+25 c/u).
   butterflies: [
     { x: 220, y: 380 },
     { x: 400, y: 330 },
@@ -57,7 +192,45 @@ export const LEVEL2 = {
     { x: 900, y: 460 },
     { x: 1150, y: 390 },
     { x: 1420, y: 470 },
+    { x: 1680, y: 380 },
+    { x: 1900, y: 330 },
+    { x: 2180, y: 370 },
+    { x: 2400, y: 460 },
+    { x: 2680, y: 390 },
+    { x: 2920, y: 470 },
+    { x: 3180, y: 380 },
+    { x: 3400, y: 330 },
+    { x: 3680, y: 370 },
+    { x: 3900, y: 460 },
+    { x: 4180, y: 390 },
+    { x: 4420, y: 470 },
+    { x: 4680, y: 380 },
+    { x: 4900, y: 330 },
+    { x: 5180, y: 370 },
+    { x: 5400, y: 460 },
+    { x: 5680, y: 390 },
+    { x: 5920, y: 470 },
+    { x: 6180, y: 380 },
+    { x: 6400, y: 330 },
+    { x: 6680, y: 370 },
+    { x: 6900, y: 460 },
   ],
-  goal: { x: 1460, y: 520 },
-  worldWidth: 1560,
+  // Anclas: una por pozo (6), a altura media, separadas; más anclajes altos.
+  anchors: [
+    { x: 950, y: 260 },
+    { x: 1950, y: 260 },
+    { x: 2950, y: 260 },
+    { x: 3950, y: 260 },
+    { x: 4950, y: 260 },
+    { x: 5950, y: 260 },
+    { x: 450, y: 160 },
+    { x: 1520, y: 160 },
+    { x: 2520, y: 160 },
+    { x: 3520, y: 160 },
+    { x: 4520, y: 160 },
+    { x: 5520, y: 160 },
+  ],
+  goal: { x: 6900, y: 520 },
+  worldWidth: 7000,
+  timeLimit: 360,
 };
