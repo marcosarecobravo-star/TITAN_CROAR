@@ -216,16 +216,6 @@ export default class Game extends Phaser.Scene {
       this._playerPrevBottom <= enemyBody.center.y + 8;
     const fromAbove = wasAbove || (playerBody.bottom <= enemyBody.center.y + 8);
 
-    // Diagnóstico temporal (quitar cuando el pisotón quede estable).
-    // eslint-disable-next-line no-console
-    console.log('[stomp]', enemy.texture.key,
-      'vy=', velocityY.toFixed(0),
-      'wasAbove=', wasAbove,
-      'fromAbove=', fromAbove,
-      'prevBottom=', this._playerPrevBottom,
-      'bottom=', playerBody.bottom.toFixed(0),
-      'enemyCenter=', enemyBody.center.y.toFixed(0));
-
     if (fromAbove) {
       // Erizo inmune (GDD): el pisotón daña al jugador, no al enemigo.
       if (enemy.texture.key === 'hedgehog') {

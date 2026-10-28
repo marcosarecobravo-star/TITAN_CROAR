@@ -1,6 +1,6 @@
-// Nivel 1 — PANTANO. Nivel ÚNICO (~5500 px), decisión del usuario:
-// 8 pozos (no más), caminos alternativos (plataformas bajas y muy altas) y
-// anclajes separados para balancearse y alcanzar plataformas fuera del salto.
+// Nivel 1 — PANTANO. Primer nivel registrado (LEVELS = [LEVEL1, LEVEL2]).
+// Muy largo (~5500 px), decisión del usuario: 8 pozos, caminos alternativos
+// (plataformas bajas y muy altas) y anclajes separados para balancearse.
 // Enemigos también patrullan plataformas (evitan caerse por el borde).
 // Obstáculos según Docs/GDD_TC.docx, sección "NIVEL 1: PANTANO": barro, pozos,
 // espinas y tronco. Sin cactus.
