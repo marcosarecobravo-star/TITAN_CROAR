@@ -162,8 +162,11 @@ export default class Game extends Phaser.Scene {
     if (this.goal) this.physics.add.overlap(this.player, this.goal, () => this.win());
     this.physics.add.overlap(this.player, this.butterflies, (p, b) => {
       if (!b.active) return;
+      // GDD §8/§18: recompensa por contacto desde arriba.
+      const body = p.body;
+      if (!(body.velocity.y > 0 && body.bottom <= b.y + b.displayHeight / 2 + 4)) return;
       b.disableBody(true, true);
-      this.score.add(25);
+      this.score.add(POINTS.BUTTERFLY);
     });
 
     // Victoria final: derrotar al jefe (GDD Condición de Victoria).
@@ -362,7 +365,7 @@ export default class Game extends Phaser.Scene {
     this.hud.updateTimer(this.timeLeft);
     const p = this.player;
     const inSlow = this.physics.overlap(p, this.slowZones);
-    const speed = inSlow ? SPEED * 0.5 : SPEED;
+    const speed = inSlow ? SPEED * 0.55 : SPEED;
 
     const left = this.cursors.left.isDown || this.keys.A.isDown;
     const right = this.cursors.right.isDown || this.keys.D.isDown;

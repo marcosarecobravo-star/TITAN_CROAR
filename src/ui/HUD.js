@@ -1,5 +1,6 @@
-// HUD de hojas, puntos y temporizador. Patrón Observer: se suscribe a
-// Health ('changed') y a Score ('changed'). Supuesto: mariposa +25, 100 pts = 1 hoja.
+// HUD de hojas, insectos-moneda y temporizador. Patrón Observer: se suscribe a
+// Health ('changed') y a Score ('changed'). GDD §8/§14: mosca 5, avispa 15,
+// mariposa 5; 100 = 1 vida extra.
 export default class HUD {
   constructor(scene, health, score = null, timeLimit = 180) {
     this.scene = scene;
@@ -29,7 +30,7 @@ export default class HUD {
   }
 
   updateScore(pts) {
-    this.scoreText.setText(`Puntos: ${pts}`);
+    this.scoreText.setText(`Insectos: ${pts}/100`);
   }
 
   updateTimer(seconds) {

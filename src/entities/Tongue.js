@@ -1,10 +1,9 @@
 // Lógica de la lengua-captura (GDD Mecánica, parcial; sin cuerda-desplazamiento).
 // Supuestos acordados con el usuario: disparo corto al frente, alcance 90 px,
 // ventana activa 150 ms, cooldown 600 ms. Sin render: la Scene dibuja el mockup.
-// Puntos acordados: avispa +50, mosca +10 (mariposa +25 y 100 pts = 1 hoja ya
-// existían como supuestos previos).
+// Puntos según GDD §8: avispa 15, mosca 5, mariposa 5 (100 = 1 vida extra).
 export const TONGUE = { RANGE: 90, ACTIVE_MS: 150, COOLDOWN_MS: 600 };
-export const POINTS = { WASP: 50, FLY: 10 };
+export const POINTS = { WASP: 15, FLY: 5, BUTTERFLY: 5 };
 
 export default class Tongue {
   constructor({ range = TONGUE.RANGE, activeMs = TONGUE.ACTIVE_MS, cooldownMs = TONGUE.COOLDOWN_MS } = {}) {
