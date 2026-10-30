@@ -15,23 +15,45 @@ export default class TongueRope {
     this.length = 0;
   }
 
-  // Engancha al ancla más cercana dentro de maxRange. Devuelve el ancla o null.
+  // Engancha al ancla más cercana dentro de maxRange, solo si hay línea de
+  // visión (no atraviesa paredes/sólidos). Devuelve el ancla o null.
   tryAttach(player, anchors) {
     if (this.attached || !anchors?.length) return null;
+    const solids = player.scene?.solids?.getChildren?.() ?? [];
     let best = null;
     let bestDist = this.maxRange;
     for (const a of anchors) {
       const d = Phaser.Math.Distance.Between(player.x, player.y, a.x, a.y);
-      if (d < bestDist) {
-        best = a;
-        bestDist = d;
-      }
+      if (d >= bestDist) continue;
+      // Línea de visión: ningún sólido se interpone.
+      if (this.blockedBySolid(player.x, player.y, a.x, a.y, solids)) continue;
+      best = a;
+      bestDist = d;
     }
     if (!best) return null;
     this.attached = true;
     this.anchor = best;
     this.length = bestDist;
     return best;
+  }
+
+  // Comprueba si un segmento entre (x1,y1) y (x2,y2) atraviesa algún sólido.
+  blockedBySolid(x1, y1, x2, y2, solids) {
+    const steps = 12;
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const px = x1 + (x2 - x1) * t;
+      const py = y1 + (y2 - y1) * t;
+      for (const s of solids) {
+        const hw = s.displayWidth / 2;
+        const hh = s.displayHeight / 2;
+        if (px >= s.x - hw && px <= s.x + hw &&
+            py >= s.y - hh && py <= s.y + hh) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   // Trepar/descender: acorta (dir < 0) o alarga (dir > 0) la cuerda.

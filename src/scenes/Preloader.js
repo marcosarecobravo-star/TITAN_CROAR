@@ -34,6 +34,7 @@ export default class Preloader extends Phaser.Scene {
     this.load.image('player', 'rana.png');
     this.load.image('crab', 'cangrejo.png');
     this.load.image('hedgehog', 'erizo.png');
+    this.load.image('wasp', 'avispa.png');
   }
 
   create() {

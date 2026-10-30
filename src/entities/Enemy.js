@@ -45,6 +45,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     ) {
       this.dir *= -1;
     }
+    // Reversión por pared: si choca con un obstáculo lateral (cactus, borde),
+    // gira para no quedarse estancado en la esquina.
+    if (this.body?.blocked.left) this.dir = 1;
+    if (this.body?.blocked.right) this.dir = -1;
     // patrulla horizontal por defecto
     this.setVelocityX(this.patrolSpeed * this.dir);
     if (this.x <= this.patrolMin) this.dir = 1;

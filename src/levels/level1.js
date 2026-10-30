@@ -1,7 +1,7 @@
-// Nivel 1 — PANTANO. Primer nivel registrado (LEVELS = [LEVEL1, LEVEL2]).
-// Muy largo (~5500 px), decisión del usuario: 8 pozos, caminos alternativos
-// (plataformas bajas y muy altas) y anclajes separados para balancearse.
-// Enemigos también patrullan plataformas (evitan caerse por el borde).
+// Nivel 1 — PANTANO. Nivel 1 de 2 (Pantano + Desierto). ~5500 px, decisión del usuario:
+// 8 pozos, caminos alternativos (plataformas bajas y muy altas) y anclajes
+// separados para balancearse y alcanzar plataformas fuera del salto.
+// Plataformas más separadas para que cada una sea un objetivo claro.
 // Obstáculos según Docs/GDD_TC.docx, sección "NIVEL 1: PANTANO": barro, pozos,
 // espinas y tronco. Sin cactus.
 // Enemigos: cangrejo, avispa y erizo. Sin águila jefe (acaba en la bandera).
@@ -9,73 +9,54 @@ export const LEVEL1 = {
   name: 'Pantano',
   spawn: { x: 60, y: 450 },
   bgImage: 'bgPantano',
-  // 9 segmentos de suelo = 8 pozos.
-  // Pozos: A 540–600 | B 1060–1140 | C 1640–1740 | D 2240–2340 |
-  //        E 2840–2960 | F 3460–3580 | G 4080–4200 | H 4700–4820
   grounds: [
-    { x: 0, y: 560, w: 540 },      // Z1 (tutorial)
-    { x: 600, y: 560, w: 460 },    // Z2
-    { x: 1140, y: 560, w: 500 },   // Z3
-    { x: 1740, y: 560, w: 500 },   // Z4
-    { x: 2340, y: 560, w: 500 },   // Z5
-    { x: 2960, y: 560, w: 500 },   // Z6
-    { x: 3580, y: 560, w: 500 },   // Z7
-    { x: 4200, y: 560, w: 500 },   // Z8
-    { x: 4820, y: 560, w: 680 },   // Z9 (final con bandera)
+    { x: 0, y: 560, w: 540 },
+    { x: 600, y: 560, w: 460 },
+    { x: 1140, y: 560, w: 500 },
+    { x: 1740, y: 560, w: 500 },
+    { x: 2340, y: 560, w: 500 },
+    { x: 2960, y: 560, w: 500 },
+    { x: 3580, y: 560, w: 500 },
+    { x: 4200, y: 560, w: 500 },
+    { x: 4820, y: 560, w: 680 },
   ],
-  // Plataformas: bajas (y~420-440) y muy altas (y~180-240) por zona.
+  // Plataformas separadas: 2 por zona (una baja, una alta), con más espacio
+  // horizontal para que cada salto requiera la cuerda o sea deliberado.
   platforms: [
     // Z1
-    { x: 260, y: 440, w: 140 },
-    { x: 420, y: 220, w: 120 },
+    { x: 300, y: 440, w: 140 },
+    { x: 470, y: 210, w: 120 },
     // Z2
-    { x: 700, y: 430, w: 140 },
-    { x: 900, y: 350, w: 140 },
-    { x: 760, y: 200, w: 120 },
+    { x: 720, y: 430, w: 140 },
+    { x: 930, y: 200, w: 120 },
     // Z3
-    { x: 1250, y: 430, w: 150 },
-    { x: 1450, y: 340, w: 150 },
-    { x: 1320, y: 260, w: 130 },
-    { x: 1380, y: 180, w: 120 },
+    { x: 1320, y: 430, w: 150 },
+    { x: 1520, y: 180, w: 130 },
     // Z4
-    { x: 1850, y: 420, w: 150 },
-    { x: 2050, y: 330, w: 150 },
-    { x: 1920, y: 250, w: 130 },
-    { x: 1980, y: 170, w: 120 },
+    { x: 1920, y: 420, w: 150 },
+    { x: 2140, y: 170, w: 130 },
     // Z5
-    { x: 2450, y: 420, w: 150 },
-    { x: 2650, y: 330, w: 150 },
-    { x: 2520, y: 250, w: 130 },
-    { x: 2580, y: 170, w: 120 },
+    { x: 2520, y: 420, w: 150 },
+    { x: 2740, y: 170, w: 130 },
     // Z6
-    { x: 3050, y: 420, w: 150 },
-    { x: 3250, y: 330, w: 150 },
-    { x: 3120, y: 250, w: 130 },
-    { x: 3180, y: 170, w: 120 },
+    { x: 3120, y: 420, w: 150 },
+    { x: 3340, y: 170, w: 130 },
     // Z7
-    { x: 3680, y: 420, w: 150 },
-    { x: 3880, y: 330, w: 150 },
-    { x: 3750, y: 250, w: 130 },
-    { x: 3810, y: 170, w: 120 },
+    { x: 3720, y: 420, w: 150 },
+    { x: 3940, y: 170, w: 130 },
     // Z8
-    { x: 4300, y: 420, w: 150 },
-    { x: 4500, y: 330, w: 150 },
-    { x: 4370, y: 250, w: 130 },
-    { x: 4430, y: 170, w: 120 },
+    { x: 4320, y: 420, w: 150 },
+    { x: 4540, y: 170, w: 130 },
     // Z9 (final)
-    { x: 4860, y: 440, w: 140 },
-    { x: 5100, y: 330, w: 150 },
-    { x: 5250, y: 240, w: 130 },
-    { x: 5400, y: 440, w: 120 },
+    { x: 4920, y: 440, w: 140 },
+    { x: 5160, y: 240, w: 130 },
   ],
-  // Cangrejos: en suelo y en plataformas (avoidPits los mantiene en su plataforma).
   crabs: [
     { x: 350, range: 80, speed: 40 },
-    // en plataforma alta Z2
-    { x: 760, y: 230, range: 40, speed: 50 },
+    { x: 760, y: 200, range: 40, speed: 50 },
     { x: 1300, range: 60, speed: 70 },
     { x: 1560, range: 50, speed: 75 },
-    { x: 1920, y: 210, range: 30, speed: 60 },
+    { x: 1920, y: 180, range: 30, speed: 60 },
     { x: 2150, range: 25, speed: 85 },
     { x: 2500, range: 50, speed: 90 },
     { x: 2750, range: 40, speed: 95 },
@@ -88,7 +69,6 @@ export const LEVEL1 = {
     { x: 4900, range: 15, speed: 125 },
     { x: 5200, range: 30, speed: 128 },
   ],
-  // Erizos inmunes (también en plataformas).
   hedgehogs: [
     { x: 800, range: 60, speed: 35 },
     { x: 900, y: 310, range: 30, speed: 40 },
@@ -99,7 +79,6 @@ export const LEVEL1 = {
     { x: 4500, range: 30, speed: 65 },
     { x: 5050, y: 200, range: 30, speed: 70 },
   ],
-  // Avispas.
   wasps: [
     { x: 950, y: 240, range: 90, speed: 65 },
     { x: 1250, y: 230, range: 100, speed: 80 },
@@ -116,7 +95,6 @@ export const LEVEL1 = {
     { x: 5100, y: 230, range: 90, speed: 123 },
     { x: 5350, y: 260, range: 90, speed: 126 },
   ],
-  // Espinas.
   spikes: [
     { x: 700, y: 532 },
     { x: 1200, y: 532 },
@@ -133,7 +111,6 @@ export const LEVEL1 = {
     { x: 4900, y: 532 },
     { x: 5200, y: 532 },
   ],
-  // Moscas inofensivas.
   flies: [
     { x: 750, y: 380, range: 40 },
     { x: 1000, y: 330, range: 40 },
@@ -154,7 +131,6 @@ export const LEVEL1 = {
     { x: 5150, y: 360, range: 40 },
     { x: 5400, y: 330, range: 40 },
   ],
-  // Mariposas (+25 c/u).
   butterflies: [
     { x: 250, y: 390 },
     { x: 420, y: 470 },
@@ -184,7 +160,6 @@ export const LEVEL1 = {
     { x: 5450, y: 380 },
   ],
   cacti: [],
-  // Barro.
   muds: [
     { x: 150, y: 538, w: 110 },
     { x: 1260, y: 538, w: 130 },
@@ -196,7 +171,6 @@ export const LEVEL1 = {
     { x: 4700, y: 538, w: 110 },
     { x: 5200, y: 538, w: 120 },
   ],
-  // Troncos.
   logs: [
     { x: 980, y: 532, w: 72 },
     { x: 1400, y: 532, w: 72 },
@@ -207,8 +181,6 @@ export const LEVEL1 = {
     { x: 4400, y: 532, w: 72 },
     { x: 5000, y: 532, w: 72 },
   ],
-  // Anclas: una por pozo (8), a altura media-alta, separadas. Algunas
-  // adicionales cerca de plataformas muy altas para alcanzarlas con la cuerda.
   anchors: [
     { x: 570, y: 260 },
     { x: 1100, y: 260 },
@@ -218,7 +190,6 @@ export const LEVEL1 = {
     { x: 3520, y: 260 },
     { x: 4140, y: 260 },
     { x: 4760, y: 260 },
-    // anclajes extra cerca de plataformas muy altas
     { x: 760, y: 160 },
     { x: 1380, y: 160 },
     { x: 1980, y: 160 },
@@ -230,4 +201,5 @@ export const LEVEL1 = {
   ],
   goal: { x: 5400, y: 520 },
   worldWidth: 5500,
+  timeLimit: 300,
 };

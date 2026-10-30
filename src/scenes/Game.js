@@ -19,8 +19,8 @@ import { progression } from '../domain/Progression.js';
 // Lengua-cuerda (decisión usuario): enganche a anclas con tecla C, péndulo.
 // Progresión (decisión usuario): hojas y puntaje se conservan entre niveles;
 // derrota = empezar desde 0 el nivel actual; bandera = avance automático.
-const SPEED = 220;
-const JUMP = -520;
+const SPEED = 260;
+const JUMP = -560;
 const BOUNCE_AFTER_STOMP = -350;
 const FEATHER_SPEED = 200;
 
@@ -30,8 +30,25 @@ export default class Game extends Phaser.Scene {
   }
 
   create() {
+    try {
+      this._createImpl();
+    } catch (e) {
+      const msg = (e && (e.stack || e.message)) || String(e);
+      // eslint-disable-next-line no-console
+      console.error('Game.create error:', e);
+      if (typeof window.showError === 'function') window.showError(msg);
+      this._createError = msg;
+      const { width, height } = this.cameras.main;
+      this.add.text(width / 2, height / 2, 'ERROR:\n' + msg, {
+        fontSize: '12px', color: '#ff6b6b',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(999);
+    }
+  }
+
+  _createImpl() {
     this.won = false;
     this.over = false;
+    this.paused = false;
     this.invulnerableUntil = 0;
 
     // Nivel actual desde la progresión multinivel.
@@ -39,6 +56,8 @@ export default class Game extends Phaser.Scene {
     this.level = LEVELS[this.levelIndex] ?? LEVELS[0];
     this.isLastLevel = this.levelIndex >= LEVELS.length - 1;
     this.lastSafe = { ...this.level.spawn };
+    this.bossFightStarted = false;
+    this.bossArena = this.level.bossArena ?? null;
 
     this.physics.world.setBounds(0, -300, this.level.worldWidth, 900);
     // Sin colisión inferior: el pozo debe dejar caer al jugador.
@@ -115,7 +134,7 @@ export default class Game extends Phaser.Scene {
     for (const a of this.anchors) this.add.image(a.x, a.y, 'anchor').setDepth(4);
 
     // --- Jugador (sapo gigante, sprite real rana.png escalado a 48x48) ---
-    this.player = this.physics.add.sprite(this.level.spawn.x, this.level.spawn.y, 'player');
+    this.player = this.physics.add.sprite(this.lastSafe.x, this.lastSafe.y, 'player');
     this.player.setCollideWorldBounds(true);
     this.player.setDisplaySize(64, 64);
     this.player.setSize(48, 56);
@@ -135,18 +154,18 @@ export default class Game extends Phaser.Scene {
     // --- Enemigos vía Factory (las moscas son inofensivas: sin colisión) ---
     const spawned = EntityFactory.createEnemies(this, this.level);
     this.boss = spawned.find((e) => e.texture.key === 'eagle') ?? null;
+    this.bossMaxHp = this.level.eagle?.hp ?? 6;
     this.enemies = spawned.filter((e) => e.texture.key !== 'fly');
     this.flies = spawned.filter((e) => e.texture.key === 'fly');
     for (const e of this.enemies) {
-      // El jefe vuela: no colisiona con el terreno.
-      if (e === this.boss) continue;
+      if (e.texture.key === 'eagle') continue;
       this.physics.add.collider(e, this.solids);
       this.physics.add.collider(e, this.cacti);
     }
 
-    // --- Plumas del jefe (proyectiles con gravedad) ---
+    // --- Plumas del jefe (proyectiles con gravedad; atraviesan plataformas) ---
     this.feathers = this.physics.add.group();
-    this.physics.add.collider(this.feathers, this.solids, (f) => f.destroy());
+    // Sin collider con sólidos: las plumas atraviesan plataformas (más dificultad).
     this.physics.add.overlap(this.player, this.feathers, (p, f) => {
       f.destroy();
       this.hurtPlayer();
@@ -162,9 +181,6 @@ export default class Game extends Phaser.Scene {
     if (this.goal) this.physics.add.overlap(this.player, this.goal, () => this.win());
     this.physics.add.overlap(this.player, this.butterflies, (p, b) => {
       if (!b.active) return;
-      // GDD §8/§18: recompensa por contacto desde arriba.
-      const body = p.body;
-      if (!(body.velocity.y > 0 && body.bottom <= b.y + b.displayHeight / 2 + 4)) return;
       b.disableBody(true, true);
       this.score.add(POINTS.BUTTERFLY);
     });
@@ -172,11 +188,12 @@ export default class Game extends Phaser.Scene {
     // Victoria final: derrotar al jefe (GDD Condición de Victoria).
     // scene.restart() no limpia scene.events: se elimina el listener previo.
     this.events.off('boss-defeated');
-    this.events.on('boss-defeated', () => this.winFinal());
+    this.events.on('boss-defeated', () => { this.hud.updateBossHp(null, 0); this.winFinal(); });
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,R,X,C');
     this.input.keyboard.on('keydown-R', () => this.restartByContext());
+    this.input.keyboard.on('keydown-ESC', () => this.togglePause());
     this.input.on('pointerdown', (pointer) => {
       if (this.won || this.over) return;
       const wx = pointer.worldX ?? pointer.x;
@@ -196,10 +213,37 @@ export default class Game extends Phaser.Scene {
     this.scene.restart();
   }
 
+  togglePause() {
+    if (this.won || this.over) return;
+    if (this.paused) {
+      this.paused = false;
+      this.physics.resume();
+      if (this.pauseOverlay) { this.pauseOverlay.destroy(); this.pauseOverlay = null; }
+      if (this.pauseText) { this.pauseText.destroy(); this.pauseText = null; }
+      if (this.pauseHint) { this.pauseHint.destroy(); this.pauseHint = null; }
+    } else {
+      this.paused = true;
+      this.physics.pause();
+      const { width, height } = this.cameras.main;
+      this.pauseOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setScrollFactor(0).setDepth(30);
+      this.pauseText = this.add.text(width / 2, height / 2 - 40, 'PAUSA', {
+        fontSize: '40px', color: '#ffffff',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(31);
+      this.pauseHint = this.add.text(width / 2, height / 2 + 10, 'Esc: continuar   R: reiniciar nivel', {
+        fontSize: '16px', color: '#dddddd',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(31);
+    }
+  }
+
   spawnFeather(x, y, angle) {
     const f = this.feathers.create(x, y, 'feather');
     if (!f) return;
     f.setDepth(4);
+    f.setDisplaySize(16, 32);
+    if (f.body) {
+      f.body.setSize(16, 32);
+      f.body.setAllowGravity(false); // las plumas vuelan rectas, sin gravedad
+    }
     f.setVelocity(Math.cos(angle) * FEATHER_SPEED, Math.sin(angle) * FEATHER_SPEED);
     f.setAngularVelocity(120);
   }
@@ -217,7 +261,15 @@ export default class Game extends Phaser.Scene {
     // encima del centro vertical del enemigo este frame.
     const wasAbove = (this._playerPrevBottom != null) &&
       this._playerPrevBottom <= enemyBody.center.y + 8;
-    const fromAbove = wasAbove || (playerBody.bottom <= enemyBody.center.y + 8);
+    // Para la avispa (voladora) no se usa el fallback wasAbove: exige caer
+    // directamente encima (pies a la altura del techo), para que los golpes
+    // laterales/bajos dañen al jugador en vez de matarla por error.
+    const isWasp = enemy.texture.key === 'wasp';
+    const strictAbove = (playerBody.velocity.y ?? 0) > 0 &&
+      playerBody.bottom <= enemyBody.top + 4;
+    const fromAbove = isWasp
+      ? strictAbove
+      : (wasAbove || (playerBody.bottom <= enemyBody.center.y + 8));
 
     if (fromAbove) {
       // Erizo inmune (GDD): el pisotón daña al jugador, no al enemigo.
@@ -225,8 +277,14 @@ export default class Game extends Phaser.Scene {
         this.hurtPlayer();
         return;
       }
+      // Águila jefe: solo recibe daño en ventanas de vulnerabilidad.
+      if (enemy.texture.key === 'eagle' && !enemy.vulnerable) {
+        this.hurtPlayer();
+        return;
+      }
       // Jefe: recibe varios golpes (GDD: "golpearlo varias veces").
       enemy.stomp();
+      if (enemy.texture.key === 'eagle') this.hud.updateBossHp(enemy.hp, this.bossMaxHp);
       this.player.setVelocityY(BOUNCE_AFTER_STOMP);
     } else if (velocityY >= 0) {
       // Solo daña si el jugador no está rebotando tras un pisotón
@@ -331,7 +389,9 @@ export default class Game extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.player.body.setAllowGravity(false);
     this.rope.detach(this.player);
-    this.hud.message('¡Juego completado!', 'Presioná R para jugar de nuevo');
+    const { width, height } = this.cameras.main;
+    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4).setScrollFactor(0).setDepth(20);
+    this.hud.message('¡Juego completado!', 'R: jugar de nuevo');
   }
 
   lose() {
@@ -340,7 +400,9 @@ export default class Game extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.player.setTint(0xff0000);
     this.rope.detach(this.player);
-    this.hud.message('Sin hojas — derrotado', 'Presioná R para empezar desde 0');
+    const { width, height } = this.cameras.main;
+    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.5).setScrollFactor(0).setDepth(20);
+    this.hud.message('Sin hojas — derrotado', 'R: reiniciar nivel   Esc: (pausa desactivada)');
   }
 
   update(time, delta) {
@@ -348,12 +410,35 @@ export default class Game extends Phaser.Scene {
     // pisotón robusta en onPlayerEnemy (el collider de Phaser puede disparar
     // con la velocidad ya anulada al aterrizar).
     if (this.player?.body) this._playerPrevBottom = this.player.body.bottom;
+    // Activación del jefe: la cámara se fija en la arena.
+    if (!this.bossFightStarted && this.level.eagle && this.player.x >= this.level.eagle.activateX) {
+      this.bossFightStarted = true;
+      this.cameras.main.stopFollow();
+      if (this.bossArena) {
+        this.cameras.main.setScroll(this.bossArena.x - 400, this.bossArena.y - 300);
+      }
+      // Restringir el mundo a la arena para que el jefe y el jugador no salgan.
+      const arena = this.bossArena ?? { x: this.level.eagle.x, y: this.level.eagle.y };
+      this.physics.world.setBounds(arena.x - 500, -100, 1000, 700);
+      this.physics.world.setBoundsCollision(true, true, true, true);
+      this.cameras.main.setBounds(arena.x - 500, -100, 1000, 700);
+      // Mostrar la barra de vida del jefe al entrar a la arena.
+      if (this.boss) this.hud.updateBossHp(this.boss.hp, this.bossMaxHp);
+    }
+    if (this._createError) {
+      if (typeof window.showError === 'function') window.showError(this._createError);
+      return;
+    }
+    if (!this.hud) return;
     // Plumas fuera de pantalla: limpieza. Phaser 4: Group.children es un Set
     // nativo (forEach), no el Structs.Set de Phaser 3 (que tenía each).
-    this.feathers.children.forEach((f) => {
-      if (f.active && (f.y > 640 || f.x < -40 || f.x > this.level.worldWidth + 40)) f.destroy();
-    });
+    if (this.feathers?.children) {
+      this.feathers.children.forEach((f) => {
+        if (f.active && (f.y > 640 || f.x < -40 || f.x > this.level.worldWidth + 40)) f.destroy();
+      });
+    }
     if (this.won || this.over) return;
+    if (this.paused) return;
     // Temporizador de cuenta regresiva (arriba a la derecha).
     this.timeLeft -= delta / 1000;
     if (this.timeLeft <= 0) {
@@ -390,7 +475,18 @@ export default class Game extends Phaser.Scene {
       const jumpPressed = Phaser.Input.Keyboard.JustDown(this.cursors.up)
         || Phaser.Input.Keyboard.JustDown(this.keys.W)
         || Phaser.Input.Keyboard.JustDown(this.cursors.space);
-      if (jumpPressed && p.body.blocked.down) p.setVelocityY(JUMP);
+      // Coyote time (0.10 s) y buffer de salto (0.12 s) — GDD §6.1.
+      if (this.coyoteTimer === undefined) this.coyoteTimer = 0;
+      if (this.jumpBufferTimer === undefined) this.jumpBufferTimer = 0;
+      if (p.body.blocked.down) this.coyoteTimer = 0.10;
+      else this.coyoteTimer = Math.max(0, this.coyoteTimer - delta / 1000);
+      if (jumpPressed) this.jumpBufferTimer = 0.12;
+      else this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - delta / 1000);
+      if (this.jumpBufferTimer > 0 && this.coyoteTimer > 0) {
+        p.setVelocityY(JUMP);
+        this.jumpBufferTimer = 0;
+        this.coyoteTimer = 0;
+      }
     }
     if (Phaser.Input.Keyboard.JustDown(this.keys.X)) this.fireTongue(this.facing);
     // Enganche a un ancla (solo si no está enganchado).
