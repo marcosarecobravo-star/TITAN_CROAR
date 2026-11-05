@@ -7,6 +7,8 @@ import EntityFactory from '../domain/EntityFactory.js';
 import HUD from '../ui/HUD.js';
 import { LEVELS } from '../levels/index.js';
 import { progression } from '../domain/Progression.js';
+import { KEYS } from '../enums/keys.js';
+import { getPhrase } from '../services/translations.js';
 
 // Scene orquestadora (AGENTS.md §5): las reglas viven en Health/Enemigos/
 // Factory; aquí solo se cablean física, colisiones y cámara.
@@ -231,7 +233,13 @@ export default class Game extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,R,X,C');
     this.input.keyboard.on('keydown-R', () => this.restartByContext());
-    this.input.keyboard.on('keydown-ESC', () => this.togglePause());
+    this.input.keyboard.on('keydown-ESC', () => {
+      if (this.over || this.won) {
+        this.scene.start('MainMenu');
+      } else {
+        this.togglePause();
+      }
+    });
     this.input.on('pointerdown', (pointer) => {
       if (this.won || this.over) return;
       const wx = pointer.worldX ?? pointer.x;
@@ -264,10 +272,10 @@ export default class Game extends Phaser.Scene {
       this.physics.pause();
       const { width, height } = this.cameras.main;
       this.pauseOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.6).setScrollFactor(0).setDepth(30);
-      this.pauseText = this.add.text(width / 2, height / 2 - 40, 'PAUSA', {
+      this.pauseText = this.add.text(width / 2, height / 2 - 40, getPhrase(KEYS.PAUSA), {
         fontSize: '40px', color: '#ffffff',
       }).setOrigin(0.5).setScrollFactor(0).setDepth(31);
-      this.pauseHint = this.add.text(width / 2, height / 2 + 10, 'Esc: continuar   R: reiniciar nivel', {
+      this.pauseHint = this.add.text(width / 2, height / 2 + 10, getPhrase(KEYS.ESC_CONTINUAR_R_REINICIAR_NIVEL), {
         fontSize: '16px', color: '#dddddd',
       }).setOrigin(0.5).setScrollFactor(0).setDepth(31);
     }
@@ -350,7 +358,7 @@ export default class Game extends Phaser.Scene {
     // GDD Mecánica: mientras la cuerda está enganchada no se puede atacar
     // a los insectos con la lengua (exclusión mutua).
     if (this.rope.attached) {
-      this.flashMessage('Lengua ocupada', 'Soltá la cuerda (C o Espacio)');
+      this.flashMessage(getPhrase(KEYS.LENGUA_OCUPADA), getPhrase(KEYS.SOLTA_LA_CUERDA_C_O_ESPACIO));
       return;
     }
     if (!this.tongue.fire(this.time.now, dir)) return;
@@ -434,7 +442,7 @@ export default class Game extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.player.body.setAllowGravity(false);
     this.rope.detach(this.player);
-    this.hud.message('¡Nivel superado!', 'Avanzando al siguiente nivel…');
+    this.hud.message(getPhrase(KEYS.NIVEL_SUPERADO), getPhrase(KEYS.AVANZANDO_AL_SIGUIENTE_NIVEL));
     // Transición automática (decisión usuario); R sigue como atajo.
     this.time.delayedCall(1500, () => {
       progression.advance();
@@ -451,7 +459,10 @@ export default class Game extends Phaser.Scene {
     this.rope.detach(this.player);
     const { width, height } = this.cameras.main;
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4).setScrollFactor(0).setDepth(20);
-    this.hud.message('¡Juego completado!', 'R: jugar de nuevo');
+    this.hud.message(
+      getPhrase(KEYS.JUEGO_COMPLETADO),
+      getPhrase(KEYS.R_JUGAR_DE_NUEVO) + '   ' + getPhrase(KEYS.ESC_MENU_PRINCIPAL)
+    );
   }
 
   lose() {
@@ -462,7 +473,10 @@ export default class Game extends Phaser.Scene {
     this.rope.detach(this.player);
     const { width, height } = this.cameras.main;
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.5).setScrollFactor(0).setDepth(20);
-    this.hud.message('Sin hojas — derrotado', 'R: reiniciar nivel   Esc: (pausa desactivada)');
+    this.hud.message(
+      getPhrase(KEYS.SIN_HOJAS_DERROTADO),
+      getPhrase(KEYS.R_REINICIAR_NIVEL) + '   ' + getPhrase(KEYS.ESC_MENU_PRINCIPAL_2)
+    );
   }
 
   update(time, delta) {

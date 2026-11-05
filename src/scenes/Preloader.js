@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { getLanguageConfig, getTranslations } from '../services/translations.js';
 
 // Mockups provisionales (AGENTS.md §7): rectángulos de colores, sin assets
 // externos. Alcance visual mínimo para validar funcionalidad.
@@ -127,6 +128,8 @@ export default class Preloader extends Phaser.Scene {
       g.fillStyle(0xb0a890, 1).fillRect(3, 2, 2, 14);
     });
     // Fondo del Nivel 1 (bgPantano): se carga en preload() desde public/.
-    this.scene.start('MainMenu');
+    // Cargar traducciones antes de iniciar el menú (Traducila).
+    const language = getLanguageConfig();
+    getTranslations(language, () => this.scene.start('MainMenu'));
   }
 }
