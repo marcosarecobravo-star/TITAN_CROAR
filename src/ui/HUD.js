@@ -1,6 +1,9 @@
 // HUD de hojas, puntos e insectos-moneda. Patron Observer: se suscribe a
 // Health ('changed') y a Score ('changed'). GDD §8/§14: mosca 5, avispa 15,
 // mariposa 5; 100 = 1 vida extra.
+import { KEYS } from '../enums/keys.js';
+import { getPhrase } from '../services/translations.js';
+
 export default class HUD {
   constructor(scene, health, score = null, timeLimit = 180) {
     this.scene = scene;
@@ -19,7 +22,7 @@ export default class HUD {
       .setScrollFactor(0).setDepth(10).setVisible(false);
     this.bossBar = scene.add.rectangle(width / 2 - 120, height - 24, 240, 14, 0xe74c3c)
       .setOrigin(0, 0.5).setScrollFactor(0).setDepth(11).setVisible(false);
-    this.bossLabel = scene.add.text(width / 2, height - 42, 'JEFE', {
+    this.bossLabel = scene.add.text(width / 2, height - 42, getPhrase(KEYS.JEFE), {
       fontSize: '12px', color: '#ffffff',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(10).setVisible(false);
     this.score = score;
@@ -35,7 +38,7 @@ export default class HUD {
   }
 
   updateScore(pts) {
-    this.scoreText.setText(`Insectos: ${pts}/100`);
+    this.scoreText.setText(getPhrase(KEYS.INSECTOS_PTS_100).replace('{pts}', pts));
   }
 
   updateTimer(seconds) {
