@@ -133,11 +133,14 @@ export default class Game extends Phaser.Scene {
     this.anchors = this.level.anchors ?? [];
     for (const a of this.anchors) this.add.image(a.x, a.y, 'anchor').setDepth(4);
 
-    // --- Jugador (sapo gigante, sprite real rana.png escalado a 48x48) ---
+    // --- Jugador (sapo gigante, sprite real rana.png 160x160 escalado a 64x64) ---
+    // El cuerpo (48x56) se centra horizontalmente y se apoya en el borde
+    // inferior del sprite: offset = ((64-48)/2, 64-56) = (8, 8).
     this.player = this.physics.add.sprite(this.lastSafe.x, this.lastSafe.y, 'player');
     this.player.setCollideWorldBounds(true);
     this.player.setDisplaySize(64, 64);
     this.player.setSize(48, 56);
+    this.player.body.setOffset(50, 100);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
     // --- Lengua-captura (mockup: rectángulo temporal, sin sprites externos) ---
@@ -159,8 +162,43 @@ export default class Game extends Phaser.Scene {
     this.flies = spawned.filter((e) => e.texture.key === 'fly');
     for (const e of this.enemies) {
       if (e.texture.key === 'eagle') continue;
+      // Enemigos de suelo: asentar sobre el sólido más cercano debajo para
+      // que no queden flotando ni atravesando plataformas.
+      if (e.texture.key === 'crab' || e.texture.key === 'hedgehog') {
+        const solids = this.solids.getChildren();
+        let best = null;
+        for (const s of solids) {
+          const hw = s.displayWidth / 2;
+          if (e.x < s.x - hw || e.x > s.x + hw) continue;
+          const top = s.y - s.displayHeight / 2;
+          if (top <= e.y) continue; // sólido debe estar debajo del enemigo
+          if (!best || top < (best.y - best.displayHeight / 2)) best = s;
+        }
+        if (best) {
+          const top = best.y - best.displayHeight / 2;
+          e.y = top - e.body.height / 2;
+          e.body.setVelocity(0, 0);
+        }
+      }
       this.physics.add.collider(e, this.solids);
       this.physics.add.collider(e, this.cacti);
+    }
+    // Jugador: asentar sobre el sólido más cercano debajo del spawn.
+    if (this.player?.body) {
+      const solids = this.solids.getChildren();
+      let best = null;
+      for (const s of solids) {
+        const hw = s.displayWidth / 2;
+        if (this.player.x < s.x - hw || this.player.x > s.x + hw) continue;
+        const top = s.y - s.displayHeight / 2;
+        if (top <= this.player.y) continue;
+        if (!best || top < (best.y - best.displayHeight / 2)) best = s;
+      }
+      if (best) {
+        const top = best.y - best.displayHeight / 2;
+        this.player.y = top - this.player.body.height / 2;
+        this.player.body.setVelocity(0, 0);
+      }
     }
 
     // --- Plumas del jefe (proyectiles con gravedad; atraviesan plataformas) ---
@@ -241,7 +279,7 @@ export default class Game extends Phaser.Scene {
     f.setDepth(4);
     f.setDisplaySize(16, 32);
     if (f.body) {
-      f.body.setSize(16, 32);
+      f.body.setSize(8, 20);
       f.body.setAllowGravity(false); // las plumas vuelan rectas, sin gravedad
     }
     f.setVelocity(Math.cos(angle) * FEATHER_SPEED, Math.sin(angle) * FEATHER_SPEED);
@@ -317,7 +355,18 @@ export default class Game extends Phaser.Scene {
     }
     if (!this.tongue.fire(this.time.now, dir)) return;
     const r = this.tongue.rect(this.player.x, this.player.y, this.player.displayWidth / 2);
-    this.tongueView.setPosition((r.x0 + r.x1) / 2, r.y).setVisible(true);
+    // Animación de extensión: la lengua crece desde el jugador hasta su alcance.
+    this.tweens.killTweensOf(this.tongueView);
+    this.tongueView
+      .setPosition((r.x0 + r.x1) / 2, r.y)
+      .setScale(0, 1)
+      .setVisible(true);
+    this.tweens.add({
+      targets: this.tongueView,
+      scaleX: 1,
+      duration: TONGUE.ACTIVE_MS / 2,
+      ease: 'Cubic.easeOut',
+    });
   }
 
   resolveTongueCaptures(now) {
@@ -328,7 +377,18 @@ export default class Game extends Phaser.Scene {
       return;
     }
     if (!this.tongue.isActive(now)) {
-      this.tongueView.setVisible(false);
+      // Retracción animada: la lengua se acorta hasta desaparecer.
+      if (this.tongueView.visible && this.tongueView.scaleX > 0) {
+        this.tweens.add({
+          targets: this.tongueView,
+          scaleX: 0,
+          duration: TONGUE.ACTIVE_MS / 2,
+          ease: 'Cubic.easeIn',
+          onComplete: () => this.tongueView.setVisible(false),
+        });
+      } else {
+        this.tongueView.setVisible(false);
+      }
       return;
     }
     const px = this.player.x;
@@ -436,6 +496,16 @@ export default class Game extends Phaser.Scene {
       this.feathers.children.forEach((f) => {
         if (f.active && (f.y > 640 || f.x < -40 || f.x > this.level.worldWidth + 40)) f.destroy();
       });
+    }
+    // Lengua de captura: seguir al jugador mientras esté visible y retraerse
+    // hacia él (evita que quede flotando en el aire al caer).
+    if (this.tongueView?.visible) {
+      const dir = this.tongue.dir || 1;
+      const halfW = this.player.displayWidth / 2;
+      const range = TONGUE.RANGE * (this.tongueView.scaleX || 0);
+      const x0 = this.player.x + dir * halfW;
+      const center = x0 + dir * range / 2;
+      this.tongueView.setPosition(center, this.player.y);
     }
     if (this.won || this.over) return;
     if (this.paused) return;

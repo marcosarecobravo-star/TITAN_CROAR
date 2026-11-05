@@ -13,6 +13,7 @@ export default class Wasp extends Enemy {
     this.phase = Math.random() * Math.PI * 2;
     this.setDisplaySize(48, 48);
     this.setSize(32, 26);
+    this.body.setOffset(55, 52); // cuerpo apoyado en el borde inferior del sprite
     this.body.setAllowGravity(false);
     // Parámetros del arco (ajustables).
     this.arcSpeed = 3.2;        // rad/s → arco ~1.0s (más rápido).

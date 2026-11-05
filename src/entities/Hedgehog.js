@@ -11,6 +11,7 @@ export default class Hedgehog extends Enemy {
     // físico 40x32 centrado.
     this.setDisplaySize(64, 64);
     this.setSize(56, 44);
+    this.body.setOffset(50, 120); // cuerpo apoyado en el borde inferior del sprite
   }
 
   stomp() {
